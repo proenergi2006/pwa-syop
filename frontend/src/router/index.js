@@ -1,0 +1,47 @@
+import { createRouter, createWebHistory } from 'vue-router'
+import { tokenStore } from '../api/client'
+import { navDir } from '../composables/useNav'
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes: [
+    { path: '/login', name: 'login', component: () => import('../views/LoginView.vue'), meta: { public: true } },
+    { path: '/', name: 'home', component: () => import('../views/HomeView.vue'), meta: { nav: true } },
+    { path: '/menu', name: 'menu', component: () => import('../views/MenuView.vue'), meta: { nav: true } },
+    { path: '/approval', name: 'approval', component: () => import('../views/ApprovalView.vue'), meta: { nav: true } },
+    { path: '/approval/:id(\\d+)', name: 'approval-detail', component: () => import('../views/ApprovalDetailView.vue'), props: true },
+    { path: '/inventory', name: 'inventory', component: () => import('../views/InventoryView.vue'), meta: { nav: true, module: 'inventory' } },
+    { path: '/reservasi', name: 'reservasi', component: () => import('../views/ReservasiView.vue'), meta: { nav: true, module: 'reservasi' } },
+    { path: '/mobil', name: 'mobil', component: () => import('../views/MobilView.vue'), meta: { nav: true, module: 'mobil' } },
+    { path: '/trucking', name: 'trucking', component: () => import('../views/TruckingView.vue'), meta: { nav: true, module: 'trucking' } },
+    { path: '/trucking/:id(\\d+)', name: 'trucking-detail', component: () => import('../views/TruckingDetailView.vue'), props: true, meta: { module: 'trucking' } },
+    { path: '/produk', name: 'produk', component: () => import('../views/ProdukView.vue'), meta: { nav: true, module: 'produk' } },
+    { path: '/produk/form', name: 'produk-form', component: () => import('../views/ProdukFormView.vue'), meta: { module: 'produk' } },
+    { path: '/produk/:id(\\d+)', name: 'produk-detail', component: () => import('../views/ProdukDetailView.vue'), props: true, meta: { module: 'produk' } },
+    { path: '/dr', name: 'dr', component: () => import('../views/DrView.vue'), meta: { nav: true, module: 'dr' } },
+    { path: '/dr/:id(\\d+)', name: 'dr-detail', component: () => import('../views/DrDetailView.vue'), props: true, meta: { module: 'dr' } },
+    { path: '/harga', name: 'harga', component: () => import('../views/HargaView.vue'), meta: { nav: true, module: 'harga' } },
+    { path: '/harga/detail', name: 'harga-detail', component: () => import('../views/HargaDetailView.vue'), meta: { module: 'harga' } },
+    { path: '/harga/form', name: 'harga-form', component: () => import('../views/HargaFormView.vue'), meta: { module: 'harga' } },
+    { path: '/po', name: 'po', component: () => import('../views/PoView.vue'), meta: { nav: true, module: 'po' } },
+    { path: '/po/:id(\\d+)', name: 'po-detail', component: () => import('../views/PoDetailView.vue'), props: true, meta: { module: 'po' } },
+    { path: '/shipping', name: 'shipping', component: () => import('../views/ShippingView.vue'), meta: { nav: true, module: 'shipping' } },
+    { path: '/shipping/:id(\\d+)', name: 'shipping-detail', component: () => import('../views/ShippingDetailView.vue'), props: true, meta: { module: 'shipping' } },
+    { path: '/riwayat', name: 'riwayat', component: () => import('../views/HistoryView.vue'), meta: { nav: true } },
+    { path: '/profil', name: 'profil', component: () => import('../views/ProfileView.vue'), meta: { nav: true } },
+    { path: '/:pathMatch(.*)*', redirect: '/' },
+  ],
+})
+
+router.beforeEach((to, from) => {
+  // Detail masuk dari kanan, kembali ke kiri; antar tab memudar naik.
+  navDir.value = ['approval-detail', 'shipping-detail', 'trucking-detail', 'dr-detail', 'po-detail', 'harga-detail', 'harga-form', 'produk-detail', 'produk-form'].includes(to.name) ? 'slide-left' : ['approval-detail', 'shipping-detail', 'trucking-detail', 'dr-detail', 'po-detail', 'harga-detail', 'harga-form', 'produk-detail', 'produk-form'].includes(from.name) ? 'slide-right' : 'fade-up'
+  if (!to.meta.public && !tokenStore.get()) return { name: 'login' }
+  if (to.name === 'login' && tokenStore.get()) return { name: 'home' }
+  // Modul yang tidak tersedia untuk peran ini kembali ke Beranda.
+  const mods = JSON.parse(localStorage.getItem('orcax_user') || 'null')?.modules
+  const need = to.meta.module || (['approval', 'approval-detail', 'riwayat'].includes(to.name) ? 'penawaran' : '')
+  if (need && Array.isArray(mods) && !mods.includes(need)) return { name: 'home' }
+})
+
+export default router

@@ -1,0 +1,12 @@
+# Acuan konsep dari aplikasi web lama (file PHP di akar folder). Berisi kode internal dan kredensial (mis. curl.php): JANGAN diunggah.
+/*.php
+# Tangkapan layar kerja
+/Screenshot*.png
+# Dump database
+*.sql
+*.sql.gz
+# Peralatan lokal
+.DS_Store
+.claude/
+.idea/
+.vscode/
