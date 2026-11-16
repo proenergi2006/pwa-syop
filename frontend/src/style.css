@@ -360,3 +360,8 @@ button:active .qi, a:active .qi, .mod:active .qi, button:active .tinted, a:activ
 .upd-x { flex: none; width: 32px; height: 32px; border-radius: 50%; border: 0; background: transparent; color: #fff; font-size: 22px; line-height: 1; opacity: 0.8; }
 .upd-enter-active, .upd-leave-active { transition: transform 0.3s ease, opacity 0.3s ease; }
 .upd-enter-from, .upd-leave-to { opacity: 0; transform: translate(-50%, -20px); }
+
+/* iPhone memperbesar (zoom) dan menggeser halaman saat kolom isian berfont < 16px menerima fokus. Hanya iOS; tampilan Android tidak berubah. */
+@supports (-webkit-touch-callout: none) {
+  input, textarea, select { font-size: 16px !important; }
+}
