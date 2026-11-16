@@ -43,6 +43,59 @@ class DrTest extends TestCase
         return ['catatan' => 'OK', 'lines' => $lines];
     }
 
+
+    /** Email yang tertangkap oleh mailer "array" (phpunit.xml) selama tes. */
+    private function mails(): array
+    {
+        return \Illuminate\Support\Facades\Mail::mailer()->getSymfonyTransport()->messages()
+            ->map(fn ($m) => $m->getOriginalMessage())->all();
+    }
+
+    private function recipients($mail): array
+    {
+        return array_map(fn ($a) => $a->getAddress(), $mail->getTo());
+    }
+
+    /** Email akun aktif pada peran (dan wilayah) yang diharapkan menerima. */
+    private function expected(array $roles, ?array $wil = null): array
+    {
+        $q = DB::table('acl_user')->whereIn('id_role', $roles)->where('is_active', 1)->whereNotNull('email_user')->where('email_user', '!=', '');
+        if ($wil !== null) {
+            $q->whereIn('id_wilayah', $wil);
+        }
+
+        return array_values(array_unique($q->pluck('email_user')->all()));
+    }
+
+    public function test_email_verifikasi_ke_logistik_dan_kembali_dp_ke_purchasing_cabang(): void
+    {
+        $this->as(5);
+        $id = $this->pending();
+        $h = DB::table('pro_pr')->where('id_pr', $id)->first();
+        $po = collect($this->pos())->sortByDesc('sisa')->first();
+        $this->postJson("/api/v1/dr/$id/verifikasi", $this->payload($id, $po))->assertOk();
+        $logistik = $this->expected([9, 10], [(int) $h->id_wilayah]);
+        $m = $this->mails();
+        $this->assertCount($logistik ? 1 : 0, $m);
+        if ($logistik) {
+            $this->assertStringStartsWith('Verifikasi DR [', $m[0]->getSubject());
+            $this->assertEqualsCanonicalizing($logistik, $this->recipients($m[0]));
+            $this->assertStringContainsString($h->nomor_pr, $m[0]->getHtmlBody());
+        }
+
+        $id2 = $this->pending();
+        $h2 = DB::table('pro_pr')->where('id_pr', $id2)->first();
+        $this->postJson("/api/v1/dr/$id2/kembali-dp")->assertOk();
+        $purch = $this->expected([5], [(int) $h2->id_wilayah]);
+        $m = $this->mails();
+        $this->assertCount(($logistik ? 1 : 0) + ($purch ? 1 : 0), $m);
+        if ($purch) {
+            $last = end($m);
+            $this->assertStringStartsWith('Revisi DR ke DP', $last->getSubject());
+            $this->assertEqualsCanonicalizing($purch, $this->recipients($last));
+        }
+    }
+
     public function test_hanya_purchasing(): void
     {
         $this->as(21);

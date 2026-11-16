@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\Accurate\AccurateException;
+use App\Services\ApprovalMail;
 use App\Services\Accurate\AccuratePoSync;
 use App\Services\PasswordGate;
 use Illuminate\Http\JsonResponse;
@@ -180,6 +181,9 @@ class PoController extends Controller
                     'ceo_result' => 1, 'ceo_summary' => $note, 'disposisi_gain_loss' => 3,
                 ]);
 
+                ApprovalMail::toRoles([5], null, 'Pengembalian PO Supplier [' . ApprovalMail::stamp() . ']',
+                    e($user->fullname) . ' meminta anda untuk merevisi ulang PO <b>' . e($po->nomor_po) . '</b>');
+
                 return response()->json(['message' => 'PO dikembalikan ke Purchasing.']);
             }
 
@@ -203,6 +207,9 @@ class PoController extends Controller
             if ($sync->enabled()) {
                 $sync->reopen($po->id_accurate, DB::table('pro_master_cabang')->where('id_master', $user->id_wilayah)->value('nama_cabang'));
             }
+
+            ApprovalMail::toRoles([5], null, 'Persetujuan PO Supplier[' . ApprovalMail::stamp() . ']',
+                e($user->fullname) . ' telah melakukan verifikasi PO Supplier <b>' . e($po->nomor_po) . '</b>');
 
             return response()->json([
                 'message'         => 'PO disetujui.',

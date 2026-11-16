@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ApprovalMail;
 use App\Services\PasswordGate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -148,6 +149,14 @@ class TruckingController extends Controller
                 'updated_at'  => now(),
                 'updated_by'  => $user->fullname,
             ]);
+
+            if ($data['keputusan'] === 'approve') {
+                $tag = $row->nomor_ti . ' - ' . ApprovalMail::stamp();
+                ApprovalMail::toRoles([5], null, "Persetujuan Trucking Instruction [{$tag}]", e($user->fullname) . ' telah menyetujui Trucking Instruction');
+                // Logistik cabang diminta membuat Delivery Plan (di web lama pesan ini salah alamat ke Purchasing; di sini ke Logistik/Admin Finance cabang TI).
+                ApprovalMail::toRoles([9, 10], [(int) DB::table(self::T)->where('id_master', $id)->value('id_wilayah')], "Trucking Instruction Telah Disetujui [{$tag}]",
+                    'Trucking Instruction dengan nomor <b>' . e($row->nomor_ti) . '</b> telah dibuat dan disetujui.<br>Silakan membuat <b>Delivery Plan</b> untuk proses pengiriman selanjutnya.');
+            }
 
             return response()->json(['message' => $data['keputusan'] === 'approve' ? 'Trucking Instruction disetujui.' : 'Trucking Instruction ditolak.']);
         });

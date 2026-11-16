@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\Accurate\AccurateDrSync;
 use App\Services\Accurate\AccurateException;
+use App\Services\ApprovalMail;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -484,6 +485,9 @@ class DrController extends Controller
             // Accurate (bila aktif): SO lalu DO. Gagal = seluruh penyimpanan dibatalkan, sama dengan web.
             app(AccurateDrSync::class)->create($id, trim((string) ($data['catatan'] ?? '')));
 
+            ApprovalMail::toRoles([9, 10], [(int) $h->id_wilayah], 'Verifikasi DR [' . ApprovalMail::stamp() . ']',
+                e($pic) . ' melakukan verifikasi untuk DR <b>' . e($h->nomor_pr) . '</b>');
+
             return response()->json(['message' => 'Delivery Request diverifikasi.']);
             });
         } catch (AccurateException $e) {
@@ -562,7 +566,7 @@ class DrController extends Controller
             return $resp;
         }
 
-        return DB::transaction(function () use ($id) {
+        return DB::transaction(function () use ($id, $request) {
             $h = $this->header($id);
             if (! $h) {
                 return response()->json(['message' => 'Delivery Request tidak ditemukan.'], 404);
@@ -578,6 +582,9 @@ class DrController extends Controller
             DB::table('pro_pr_detail')->whereIn('id_prd', $rows->pluck('id_prd'))->delete();
             DB::table('pro_pr')->where('id_pr', $id)->delete();
             DB::table('pro_po_customer_plan')->whereIn('id_plan', $rows->pluck('id_plan')->unique())->update(['status_plan' => 0]);
+
+            ApprovalMail::toRoles([5], [(int) $h->id_wilayah], 'Revisi DR ke DP  [' . ApprovalMail::stamp() . ']',
+                e($request->user()->fullname) . ' kembalikan status DR ke delivery plan logistik (DR <b>' . e($h->nomor_pr) . '</b>)');
 
             return response()->json(['message' => 'DR dikembalikan ke delivery plan logistik.']);
         });

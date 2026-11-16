@@ -34,6 +34,52 @@ class ShippingTest extends TestCase
         return DB::table('new_pro_inventory_vendor_po_ship_req')->insertGetId($row);
     }
 
+
+    /** Email yang tertangkap oleh mailer "array" (phpunit.xml) selama tes. */
+    private function mails(): array
+    {
+        return \Illuminate\Support\Facades\Mail::mailer()->getSymfonyTransport()->messages()
+            ->map(fn ($m) => $m->getOriginalMessage())->all();
+    }
+
+    private function recipients($mail): array
+    {
+        return array_map(fn ($a) => $a->getAddress(), $mail->getTo());
+    }
+
+    /** Email akun aktif pada peran (dan wilayah) yang diharapkan menerima. */
+    private function expected(array $roles, ?array $wil = null): array
+    {
+        $q = DB::table('acl_user')->whereIn('id_role', $roles)->where('is_active', 1)->whereNotNull('email_user')->where('email_user', '!=', '');
+        if ($wil !== null) {
+            $q->whereIn('id_wilayah', $wil);
+        }
+
+        return array_values(array_unique($q->pluck('email_user')->all()));
+    }
+
+    public function test_email_setuju_ke_purchasing_dan_mgr_logistik_tolak_ke_purchasing(): void
+    {
+        $this->as(21);
+        $id = $this->pending();
+        $nomor = DB::table('new_pro_inventory_vendor_po_ship_req')->where('id_master', $id)->value('nomor_req');
+        $this->postJson("/api/v1/shipping/$id/keputusan", ['keputusan' => 'approve'])->assertOk();
+        $m = $this->mails();
+        $this->assertCount(1, $m);
+        $this->assertStringStartsWith("Persetujuan Shipping Instruction[{$nomor} - ", $m[0]->getSubject());
+        $this->assertEqualsCanonicalizing($this->expected([5, 16]), $this->recipients($m[0]));
+        $this->assertStringContainsString('telah menyetujui Shipping Instruction', $m[0]->getHtmlBody());
+
+        $id2 = $this->pending();
+        $this->postJson("/api/v1/shipping/$id2/keputusan", ['keputusan' => 'reject', 'catatan' => "Volume <b>salah</b>"])->assertOk();
+        $m = $this->mails();
+        $this->assertCount(2, $m);
+        $this->assertStringStartsWith('Pengembalian Shipping Instruction[', $m[1]->getSubject());
+        $this->assertEqualsCanonicalizing($this->expected([5]), $this->recipients($m[1]));
+        $this->assertStringContainsString('merevisi ulang Shipping Instruction dengan catatan', $m[1]->getHtmlBody());
+        $this->assertStringContainsString('Volume &lt;b&gt;salah&lt;/b&gt;', $m[1]->getHtmlBody()); // di-escape
+    }
+
     public function test_hanya_ceo(): void
     {
         $this->as(7);

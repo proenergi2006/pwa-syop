@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ApprovalMail;
 use App\Services\PasswordGate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -152,6 +153,14 @@ class ShippingController extends Controller
                 'updated_at'  => now(),
                 'updated_by'  => $user->fullname,
             ]);
+
+            $tag = $row->nomor_req . ' - ' . ApprovalMail::stamp();
+            if ($data['keputusan'] === 'approve') {
+                ApprovalMail::toRoles([5, 16], null, "Persetujuan Shipping Instruction[{$tag}]", e($user->fullname) . ' telah menyetujui Shipping Instruction');
+            } else {
+                ApprovalMail::toRoles([5], null, "Pengembalian Shipping Instruction[{$tag}]",
+                    e($user->fullname) . " meminta anda untuk merevisi ulang Shipping Instruction dengan catatan  '" . e(trim((string) ($data['catatan'] ?? ''))) . "'");
+            }
 
             return response()->json(['message' => $data['keputusan'] === 'approve' ? 'Shipping Instruction disetujui.' : 'Shipping Instruction ditolak.']);
         });
