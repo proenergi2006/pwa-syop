@@ -70,6 +70,9 @@ return [
     // Masa berlaku token login (menit).
     'token_ttl_minutes' => (int) env('ORCA_TOKEN_TTL', 60 * 24 * 7),
 
+    // Garam password web lama ($salt di acl_login.php). WAJIB sama agar username+password web dan PWA identik.
+    'password_salt' => env('ORCA_PASSWORD_SALT'),
+
     'per_page_max' => 50,
 
     /*

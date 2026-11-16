@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AclUser;
+use App\Support\LegacyPassword;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 
@@ -28,8 +29,8 @@ class PasswordGate
             return false;
         }
 
-        // password_verify: hash lama berawalan $2a$ ditolak oleh Hash::check.
-        if (password_verify($password, (string) $user->password)) {
+        // Sama persis dengan web lama (htmlspecialchars + garam + crypt); lihat LegacyPassword.
+        if (LegacyPassword::check($password, (string) $user->password)) {
             RateLimiter::clear(self::key($user));
 
             return true;

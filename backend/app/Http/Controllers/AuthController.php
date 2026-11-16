@@ -5,15 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\AclUser;
 use App\Models\FaceTemplate;
 use App\Services\AuthLog;
+use App\Support\LegacyPassword;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class AuthController extends Controller
 {
-    /** Hash bohongan agar waktu respons sama baik user ada maupun tidak. */
-    private const DUMMY_HASH = '$2y$10$usesomesillystringforeOXIQ4U0O8cbxiF5y3GcD3wkoEPuaa';
-
     public function login(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -26,9 +24,8 @@ class AuthController extends Controller
             ->where('is_active', 1)
             ->first();
 
-        // password_verify (bukan Hash::check): hash lama berawalan $2a$, yang
-        // ditolak oleh Hash::check karena dianggap bukan bcrypt.
-        $ok = password_verify($data['password'], $user?->password ?? self::DUMMY_HASH);
+        // Sama persis dengan web lama (htmlspecialchars + garam + crypt); lihat LegacyPassword.
+        $ok = LegacyPassword::check($data['password'], $user?->password);
 
         if (! $user || ! $ok) {
             AuthLog::record('login_fail', $request, $user ? (int) $user->id_user : null, $data['username']);

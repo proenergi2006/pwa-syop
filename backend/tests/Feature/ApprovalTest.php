@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Support\LegacyPassword;
 use App\Models\AclUser;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +37,7 @@ class ApprovalTest extends TestCase
 
     public function test_login_dengan_hash_2a_berhasil_dan_password_salah_ditolak(): void
     {
-        $hash = '$2a$' . substr(password_hash('Rahasia123', PASSWORD_BCRYPT), 4);
+        $hash = LegacyPassword::make('Rahasia123');
         DB::table('acl_user')->where('id_user', self::BM_CAB5)->update(['password' => $hash]);
         $username = AclUser::find(self::BM_CAB5)->username;
 
@@ -50,7 +51,7 @@ class ApprovalTest extends TestCase
 
     public function test_user_nonaktif_tidak_bisa_login(): void
     {
-        $hash = password_hash('Rahasia123', PASSWORD_BCRYPT);
+        $hash = LegacyPassword::make('Rahasia123');
         DB::table('acl_user')->where('id_user', self::BM_CAB5)->update(['password' => $hash, 'is_active' => 0]);
         $username = AclUser::find(self::BM_CAB5)->username;
 
@@ -61,7 +62,7 @@ class ApprovalTest extends TestCase
     public function test_role_lain_bisa_masuk_tapi_tanpa_modul_penawaran_403(): void
     {
         $uid = DB::table('acl_user')->where('is_active', 1)->whereNotIn('id_role', [7, 6, 3, 21, 1, 4, 5])->value('id_user');
-        DB::table('acl_user')->where('id_user', $uid)->update(['password' => password_hash('Rahasia123', PASSWORD_BCRYPT)]);
+        DB::table('acl_user')->where('id_user', $uid)->update(['password' => LegacyPassword::make('Rahasia123')]);
 
         $res = $this->postJson('/api/v1/auth/login', [
             'username' => AclUser::find($uid)->username, 'password' => 'Rahasia123',

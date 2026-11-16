@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Support\LegacyPassword;
 use App\Models\AclUser;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +23,7 @@ class FaceLoginTest extends TestCase
     {
         parent::setUp();
         DB::table('acl_user')->where('id_user', self::BM)->update([
-            'password' => '$2a$' . substr(password_hash(self::PWD, PASSWORD_BCRYPT), 4),
+            'password' => LegacyPassword::make(self::PWD),
         ]);
         RateLimiter::clear('face:' . sha1(mb_strtolower($this->username())));
         RateLimiter::clear('pwgate:' . self::BM);
