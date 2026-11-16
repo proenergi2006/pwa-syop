@@ -8,4 +8,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 // Pantau approval baru dan kirim push (butuh cron: * * * * * php artisan schedule:run).
-Illuminate\Support\Facades\Schedule::command('orca:notify-waiting')->everyMinute()->withoutOverlapping()->runInBackground();
+Illuminate\Support\Facades\Schedule::command('orca:notify-waiting')->everyMinute()->withoutOverlapping(5);
