@@ -35,7 +35,7 @@ const id = {
   // login
   'login.errRequired': 'Username dan kata sandi wajib diisi.', 'login.errUsername': 'Masukkan username Anda dulu.',
   'login.h1a': 'Masuk lebih cepat.', 'login.h1b': 'Operasional tetap aman.',
-  'login.welcome': 'Selamat datang kembali', 'login.withAccount': 'Masuk dengan akun SYOP Anda.',
+  'login.welcome': 'Selamat datang', 'login.withAccount': 'Masuk dengan akun SYOP Anda.',
   'login.username': 'Username', 'login.password': 'Kata sandi', 'login.submit': 'Masuk ke aplikasi', 'login.submitting': 'Memeriksa…',
   'login.faceTitle': 'Masuk dengan wajah', 'login.scanTitle': 'Pindai wajah Anda', 'login.faceSub': 'Masukkan username, lalu pindai wajah Anda.',
   'login.faceNext': 'Lanjut pindai wajah', 'login.forUser': 'Untuk {name}', 'login.verifying': 'Memverifikasi…',
@@ -195,7 +195,7 @@ const en = {
   'status.approved': 'Approved', 'status.rejected': 'Rejected', 'status.waiting': 'Waiting',
   'login.errRequired': 'Username and password are required.', 'login.errUsername': 'Enter your username first.',
   'login.h1a': 'Sign in faster.', 'login.h1b': 'Operations stay secure.',
-  'login.welcome': 'Welcome back', 'login.withAccount': 'Sign in with your SYOP account.',
+  'login.welcome': 'Welcome', 'login.withAccount': 'Sign in with your SYOP account.',
   'login.username': 'Username', 'login.password': 'Password', 'login.submit': 'Sign in', 'login.submitting': 'Checking…',
   'login.faceTitle': 'Sign in with face', 'login.scanTitle': 'Scan your face', 'login.faceSub': 'Enter your username, then scan your face.',
   'login.faceNext': 'Continue to face scan', 'login.forUser': 'For {name}', 'login.verifying': 'Verifying…',
