@@ -54,6 +54,13 @@ class TruckingController extends Controller
         return self::waiting($this->base())->count();
     }
 
+    /** @return array<int,string> id => nomor TI */
+    public function waitingItems(): array
+    {
+        return self::waiting($this->base())->orderByDesc('a.id_master')->limit(500)
+            ->get(['a.id_master as id', 'a.nomor_ti as label'])->pluck('label', 'id')->all();
+    }
+
     /** Catatan disimpan seperti web: di-escape HTML (ENT_QUOTES); dibaca kembali apa adanya. */
     private static function plain(?string $s): ?string
     {

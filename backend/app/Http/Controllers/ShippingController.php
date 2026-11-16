@@ -33,6 +33,13 @@ class ShippingController extends Controller
         return self::waiting($this->base())->count();
     }
 
+    /** @return array<int,string> id => nomor SI (atau nomor request bila SI belum terbit) */
+    public function waitingItems(): array
+    {
+        return self::waiting($this->base())->orderByDesc('s.id_master')->limit(500)
+            ->get(['s.id_master as id', DB::raw("coalesce(nullif(s.nomor_si, ''), s.nomor_req) as label")])->pluck('label', 'id')->all();
+    }
+
     private function cols(bool $detail = false): array
     {
         $c = ['s.id_master as id', 's.nomor_req', 's.nomor_si', 's.status', 's.cfo_result', 's.ceo_result', 's.quantity', 's.cargo_name',

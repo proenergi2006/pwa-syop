@@ -30,6 +30,13 @@ class DrController extends Controller
         return (int) DB::table('pro_pr')->where('disposisi_pr', 3)->where(fn ($w) => $w->whereNull('purchasing_result')->orWhere('purchasing_result', 0))->count();
     }
 
+    /** @return array<int,string> id_pr => nomor DR */
+    public function waitingItems(): array
+    {
+        return DB::table('pro_pr')->where('disposisi_pr', 3)->where(fn ($w) => $w->whereNull('purchasing_result')->orWhere('purchasing_result', 0))
+            ->orderByDesc('id_pr')->limit(500)->get(['id_pr as id', 'nomor_pr as label'])->pluck('label', 'id')->all();
+    }
+
     private static function statusLabel($r): string
     {
         $d = (int) $r->disposisi_pr;

@@ -81,6 +81,13 @@ class PenawaranApprovalService
     }
 
     /** Ringkasan untuk beranda: yang menunggu, yang terlama, dan keputusan 7 hari terakhir. */
+    /** @return array<int,string> id_penawaran => "nomor surat · customer" (untuk isi notifikasi) */
+    public function waitingItems(AclUser $user): array
+    {
+        return (clone $this->pendingQuery($user))->reorder()->orderByDesc('a.id_penawaran')->limit(500)->get()
+            ->mapWithKeys(fn ($r) => [(int) $r->id_penawaran => trim($r->nomor_surat . ' · ' . $r->nama_customer, ' ·')])->all();
+    }
+
     public function ringkasan(AclUser $user): array
     {
         $pending = (clone $this->pendingQuery($user))->reorder();

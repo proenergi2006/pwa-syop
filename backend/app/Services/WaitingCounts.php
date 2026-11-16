@@ -14,6 +14,21 @@ class WaitingCounts
 {
     public const MODULES = ['penawaran', 'po', 'shipping', 'trucking', 'dr'];
 
+    /** Item yang menunggu per modul: id => kode dokumen (hanya modul yang boleh dipakai perannya). */
+    public static function items(AclUser $user): array
+    {
+        $role = (int) $user->id_role;
+        $can  = fn (string $m) => ModuleAccess::allows($m, $role);
+
+        return [
+            'penawaran' => $can('penawaran') ? app(PenawaranApprovalService::class)->waitingItems($user) : [],
+            'po'        => $can('po') ? app(PoController::class)->waitingItems() : [],
+            'shipping'  => $can('shipping') ? app(ShippingController::class)->waitingItems() : [],
+            'trucking'  => $can('trucking') ? app(TruckingController::class)->waitingItems() : [],
+            'dr'        => $can('dr') ? app(DrController::class)->waitingItems() : [],
+        ];
+    }
+
     /** @return array{penawaran:int,po:int,shipping:int,trucking:int,dr:int} */
     public static function for(AclUser $user): array
     {

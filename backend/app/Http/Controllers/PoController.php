@@ -39,6 +39,13 @@ class PoController extends Controller
         return self::waiting($this->base())->count();
     }
 
+    /** @return array<int,string> id => nomor PO (untuk isi notifikasi) */
+    public function waitingItems(): array
+    {
+        return self::waiting($this->base())->orderByDesc('a.id_master')->limit(500)
+            ->get(['a.id_master as id', 'a.nomor_po as label'])->pluck('label', 'id')->all();
+    }
+
     private function listCols(): array
     {
         return ['a.id_master as id', 'a.nomor_po', 'a.tanggal_inven as tanggal', 'a.volume_po', 'a.harga_tebus', 'a.total_order', 'a.disposisi_po',

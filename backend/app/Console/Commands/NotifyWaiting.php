@@ -8,11 +8,14 @@ use App\Services\PushService;
 use App\Services\WaitingCounts;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Pemantau approval: item PO, SI, TI, DR, dan penawaran dibuat oleh aplikasi web lama, jadi backend ini tidak tahu kapan ada yang baru.
- * Perintah ini dijalankan tiap menit (scheduler) dan mengirim Web Push ke user yang jumlah "menunggu keputusan"-nya BERTAMBAH.
- * Notifikasi berisi jumlah total supaya ikon aplikasi (Badging API) ikut menampilkan angka walau aplikasi tertutup.
+ * Perintah ini dijalankan tiap menit (scheduler). Ia membandingkan DAFTAR item yang menunggu keputusan tiap user dengan catatan terakhir,
+ * lalu mengirim Web Push yang menyebut kode dokumen yang BARU (mis. "PO baru: 023/EMLI/SMD/XI/25") dan total yang menunggu,
+ * supaya ikon aplikasi (Badging API) ikut menampilkan angka walau aplikasi tertutup.
+ * Membandingkan id (bukan jumlah) juga menangkap kasus satu item diputuskan dan satu item baru masuk di rentang yang sama.
  */
 class NotifyWaiting extends Command
 {
@@ -20,8 +23,10 @@ class NotifyWaiting extends Command
 
     protected $description = 'Kirim push ke user yang punya approval baru menunggu keputusan';
 
-    private const LABEL = ['penawaran' => ['penawaran', 'offer'], 'po' => ['PO', 'PO'], 'shipping' => ['SI', 'SI'], 'trucking' => ['TI', 'TI'], 'dr' => ['DR', 'DR']];
+    private const LABEL = ['penawaran' => ['Penawaran', 'offer'], 'po' => ['PO', 'PO'], 'shipping' => ['SI', 'SI'], 'trucking' => ['TI', 'TI'], 'dr' => ['DR', 'DR']];
     private const URL = ['penawaran' => '/approval', 'po' => '/po', 'shipping' => '/shipping', 'trucking' => '/trucking', 'dr' => '/dr'];
+    private const MAX_CODES = 2;   // kode yang ditampilkan per modul
+    private const MAX_LINES = 3;   // baris modul per notifikasi
 
     public function handle(PushService $push): int
     {
@@ -29,41 +34,45 @@ class NotifyWaiting extends Command
         $sent = 0;
         foreach (AclUser::whereIn('id_user', $ids)->where('is_active', 1)->get() as $user) {
             try {
-                $now = WaitingCounts::for($user);
+                $items = WaitingCounts::items($user);
             } catch (\Throwable $e) {
                 $this->warn("user {$user->id_user}: {$e->getMessage()}");
 
                 continue;
             }
-            $total = array_sum($now);
+            $counts = array_map('count', $items);
+            $total = array_sum($counts);
             $state = DB::table('mobile_notify_state')->where('id_user', $user->id_user)->first();
-            $prev = $state ? (json_decode($state->counts, true) ?: []) : null;
+            $prev = ($state && $state->items) ? (json_decode($state->items, true) ?: []) : null;
 
+            // modul => daftar kode dokumen yang baru muncul sejak catatan terakhir
             $new = [];
             if ($prev !== null) {
                 foreach (WaitingCounts::MODULES as $m) {
-                    $d = ($now[$m] ?? 0) - ($prev[$m] ?? 0);
-                    if ($d > 0) {
-                        $new[$m] = $d;
+                    $known = array_flip(array_map('intval', $prev[$m] ?? []));
+                    foreach ($items[$m] ?? [] as $id => $label) {
+                        if (! isset($known[(int) $id])) {
+                            $new[$m][] = (string) $label;
+                        }
                     }
                 }
             }
 
             $sentNow = false;
             if ($new) {
-                $id = collect($new)->map(fn ($n, $m) => "{$n} ".self::LABEL[$m][0].' baru')->implode(' · ');
-                $en = collect($new)->map(fn ($n, $m) => "{$n} new ".self::LABEL[$m][1])->implode(' · ');
+                $bodyId = $this->body($new, $total, 'id');
+                $bodyEn = $this->body($new, $total, 'en');
                 $url = count($new) === 1 ? self::URL[array_key_first($new)] : '/approval';
                 if ($this->option('dry')) {
-                    $this->line("user {$user->id_user} ({$user->username}): {$id} (total {$total})");
+                    $this->line("user {$user->id_user} ({$user->username}):\n{$bodyId}");
                 } else {
                     $sent += $push->send([$user->id_user], [
                         'title' => 'Menunggu keputusan Anda',
-                        'body'  => "{$id} · total {$total}",
+                        'body'  => $bodyId,
                         'url'   => $url,
                         'tag'   => 'waiting',
                         'badge' => $total,
-                        'en'    => ['title' => 'Awaiting your decision', 'body' => "{$en} · total {$total}", 'badge' => $total],
+                        'en'    => ['title' => 'Awaiting your decision', 'body' => $bodyEn, 'badge' => $total],
                     ]);
                     $sentNow = true;
                 }
@@ -71,12 +80,38 @@ class NotifyWaiting extends Command
 
             if (! $this->option('dry')) {
                 DB::table('mobile_notify_state')->updateOrInsert(['id_user' => $user->id_user], [
-                    'counts' => json_encode($now), 'updated_at' => now(), 'created_at' => now(),
+                    'counts' => json_encode($counts),
+                    'items'  => json_encode(array_map(fn ($a) => array_map('intval', array_keys($a)), $items)),
+                    'updated_at' => now(), 'created_at' => now(),
                 ] + ($sentNow ? ['notified_at' => now()] : []));
             }
         }
         $this->info("Selesai. Push terkirim: {$sent}");
 
         return self::SUCCESS;
+    }
+
+    /** Isi notifikasi: satu baris per modul yang punya item baru (maks. beberapa kode), lalu total yang menunggu. */
+    private function body(array $new, int $total, string $lang): string
+    {
+        $en = $lang === 'en';
+        $lines = [];
+        foreach (array_slice($new, 0, self::MAX_LINES, true) as $m => $labels) {
+            $n = count($labels);
+            $name = self::LABEL[$m][$en ? 1 : 0];
+            $shown = array_map(fn ($l) => Str::limit($l, 44), array_slice($labels, 0, self::MAX_CODES));
+            $rest = $n - count($shown);
+            $codes = implode(', ', $shown).($rest > 0 ? ($en ? " +{$rest} more" : " +{$rest} lainnya") : '');
+            $lines[] = $en
+                ? ($n === 1 ? "New {$name}: {$codes}" : "{$n} new {$name}: {$codes}")
+                : ($n === 1 ? "{$name} baru: {$codes}" : "{$n} {$name} baru: {$codes}");
+        }
+        $hidden = count($new) - count($lines);
+        if ($hidden > 0) {
+            $lines[] = $en ? "+{$hidden} other types" : "+{$hidden} jenis lain";
+        }
+        $lines[] = $en ? "Total awaiting: {$total}" : "Total menunggu: {$total}";
+
+        return implode("\n", $lines);
     }
 }
