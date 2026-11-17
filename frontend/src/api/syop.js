@@ -101,3 +101,7 @@ export const getVendor = (id) => api.get(`/master/vendor/${id}`).then((r) => r.d
 export const vendorLastCode = () => api.get('/master/vendor/kode-terakhir').then((r) => r.data)
 export const createVendor = (p) => api.post('/master/vendor', p).then((r) => r.data)
 export const updateVendor = (id, p) => api.put(`/master/vendor/${id}`, p).then((r) => r.data)
+
+export const listVerifikasiCustomer = (params = {}) => api.get('/verifikasi-customer', { params }).then((r) => r.data)
+export const getVerifikasiCustomer = (id) => api.get(`/verifikasi-customer/${id}`).then((r) => r.data)
+export const decideVerifikasiCustomer = (id, p) => api.post(`/verifikasi-customer/${id}/keputusan`, p).then((r) => r.data)

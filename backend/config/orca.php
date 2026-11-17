@@ -32,6 +32,7 @@ return [
         'dr' => [5], // Delivery Request: verifikasi Purchasing
         'master' => [5], // Master Terminal dan Master Vendor: Purchasing/Procurement
         'trucking_dr' => [5], // Trucking Delivery Request: verifikasi Purchasing/Procurement
+        'verifikasi_customer' => [7, 6], // Verifikasi Data Customer: BM dan OM
         'trucking' => [21], // Trucking Instruction: persetujuan CEO
         'shipping' => [21], // Shipping Instruction: persetujuan akhir CEO
         'mobil' => ['*'], // Peminjaman mobil: semua peran, mobil sesuai cabang pengguna

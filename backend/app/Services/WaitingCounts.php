@@ -7,13 +7,14 @@ use App\Http\Controllers\PoController;
 use App\Http\Controllers\ShippingController;
 use App\Http\Controllers\TruckingController;
 use App\Http\Controllers\TruckingDrController;
+use App\Http\Controllers\VerifikasiCustomerController;
 use App\Http\Middleware\ModuleAccess;
 use App\Models\AclUser;
 
 /** Jumlah item yang menunggu keputusan satu user, per modul (hanya modul yang boleh dipakai perannya). Dipakai /badges dan notifikasi push. */
 class WaitingCounts
 {
-    public const MODULES = ['penawaran', 'po', 'shipping', 'trucking', 'dr', 'trucking_dr'];
+    public const MODULES = ['penawaran', 'po', 'shipping', 'trucking', 'dr', 'trucking_dr', 'verifikasi_customer'];
 
     /** Item yang menunggu per modul: id => kode dokumen (hanya modul yang boleh dipakai perannya). */
     public static function items(AclUser $user): array
@@ -28,10 +29,11 @@ class WaitingCounts
             'trucking'  => $can('trucking') ? app(TruckingController::class)->waitingItems() : [],
             'dr'        => $can('dr') ? app(DrController::class)->waitingItems() : [],
             'trucking_dr' => $can('trucking_dr') ? app(TruckingDrController::class)->waitingItems() : [],
+            'verifikasi_customer' => $can('verifikasi_customer') ? app(VerifikasiCustomerController::class)->waitingItems($user) : [],
         ];
     }
 
-    /** @return array{penawaran:int,po:int,shipping:int,trucking:int,dr:int,trucking_dr:int} */
+    /** @return array{penawaran:int,po:int,shipping:int,trucking:int,dr:int,trucking_dr:int,verifikasi_customer:int} */
     public static function for(AclUser $user): array
     {
         $role = (int) $user->id_role;
@@ -44,6 +46,7 @@ class WaitingCounts
             'trucking'  => $can('trucking') ? app(TruckingController::class)->waitingCount() : 0,
             'dr'        => $can('dr') ? app(DrController::class)->waitingCount() : 0,
             'trucking_dr' => $can('trucking_dr') ? app(TruckingDrController::class)->waitingCount() : 0,
+            'verifikasi_customer' => $can('verifikasi_customer') ? app(VerifikasiCustomerController::class)->waitingCount($user) : 0,
         ];
     }
 }

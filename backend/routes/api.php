@@ -17,6 +17,7 @@ use App\Http\Controllers\MobilController;
 use App\Http\Controllers\PoController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\ReservasiController;
+use App\Http\Controllers\VerifikasiCustomerController;
 use App\Http\Controllers\ProfilePhotoController;
 use App\Http\Controllers\PushController;
 use Illuminate\Support\Facades\Route;
@@ -135,6 +136,12 @@ Route::prefix('v1')->group(function () {
         Route::post('{id}/verifikasi', [TruckingDrController::class, 'verify'])->whereNumber('id')->middleware('throttle:30,1');
         Route::post('{id}/revisi', [TruckingDrController::class, 'revise'])->whereNumber('id')->middleware('throttle:30,1');
         Route::post('{id}/kembali-dp', [TruckingDrController::class, 'returnToDp'])->whereNumber('id')->middleware('throttle:10,1');
+    });
+
+    Route::middleware(['auth:sanctum', ModuleAccess::class.':verifikasi_customer'])->prefix('verifikasi-customer')->group(function () {
+        Route::get('/', [VerifikasiCustomerController::class, 'index']);
+        Route::get('{id}', [VerifikasiCustomerController::class, 'show'])->whereNumber('id');
+        Route::post('{id}/keputusan', [VerifikasiCustomerController::class, 'decide'])->whereNumber('id')->middleware('throttle:20,1');
     });
 
     Route::middleware(['auth:sanctum', ModuleAccess::class.':trucking'])->prefix('trucking')->group(function () {
