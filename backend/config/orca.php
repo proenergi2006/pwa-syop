@@ -35,6 +35,7 @@ return [
         'dr' => [5], // Delivery Request: verifikasi Purchasing
         'master' => [5], // Master Terminal dan Master Vendor: Purchasing/Procurement
         'trucking_dr' => [5], // Trucking Delivery Request: verifikasi Purchasing/Procurement
+        'sc' => [7], // Verifikasi Sales Confirmation: BM, per cabang
         'permohonan' => [7], // Verifikasi Permohonan (pemutakhiran data customer): BM, per cabang
         'lcr' => [7], // Verifikasi LCR: BM, per cabang
         'refund' => [7, 21], // Penerima Refund: verifikasi BM lalu CEO

@@ -114,3 +114,6 @@ export const decidePermohonan = (id, p) => api.post(`/permohonan/${id}/keputusan
 export const listLcr = (params = {}) => api.get('/lcr', { params }).then((r) => r.data)
 export const getLcr = (id) => api.get(`/lcr/${id}`).then((r) => r.data)
 export const decideLcr = (id, p) => api.post(`/lcr/${id}/keputusan`, p).then((r) => r.data)
+export const listSc = (params = {}) => api.get('/sales-confirmation', { params }).then((r) => r.data)
+export const getSc = (id) => api.get(`/sales-confirmation/${id}`).then((r) => r.data)
+export const decideSc = (id, p) => api.post(`/sales-confirmation/${id}/keputusan`, p).then((r) => r.data)

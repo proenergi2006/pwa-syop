@@ -20,6 +20,7 @@ use App\Http\Controllers\PermohonanController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\RefundPenerimaController;
 use App\Http\Controllers\ReservasiController;
+use App\Http\Controllers\SalesConfirmationController;
 use App\Http\Controllers\VerifikasiCustomerController;
 use App\Http\Controllers\ProfilePhotoController;
 use App\Http\Controllers\PushController;
@@ -139,6 +140,13 @@ Route::prefix('v1')->group(function () {
         Route::post('{id}/verifikasi', [TruckingDrController::class, 'verify'])->whereNumber('id')->middleware('throttle:30,1');
         Route::post('{id}/revisi', [TruckingDrController::class, 'revise'])->whereNumber('id')->middleware('throttle:30,1');
         Route::post('{id}/kembali-dp', [TruckingDrController::class, 'returnToDp'])->whereNumber('id')->middleware('throttle:10,1');
+    });
+
+    Route::middleware(['auth:sanctum', ModuleAccess::class.':sc'])->prefix('sales-confirmation')->group(function () {
+        Route::get('/', [SalesConfirmationController::class, 'index']);
+        Route::get('{id}', [SalesConfirmationController::class, 'show'])->whereNumber('id');
+        Route::get('{id}/berkas/{jenis}', [SalesConfirmationController::class, 'berkas'])->whereNumber('id')->where('jenis', 'po|unblock');
+        Route::post('{id}/keputusan', [SalesConfirmationController::class, 'decide'])->whereNumber('id')->middleware('throttle:20,1');
     });
 
     Route::middleware(['auth:sanctum', ModuleAccess::class.':permohonan'])->prefix('permohonan')->group(function () {
