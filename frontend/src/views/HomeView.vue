@@ -44,11 +44,11 @@ const notifs = ref([])
 const logoutOpen = ref(false)
 
 // Menu utama (bulat): yang sudah bisa dipakai membuka halamannya, sisanya memberi tahu "segera hadir".
-const limitedMods = computed(() => Array.isArray(auth.user?.modules) && auth.user.modules.every((x) => ['penawaran', 'stok_terminal', 'reservasi', 'mobil', 'inventory', 'dr', 'trucking_dr', 'master', 'verifikasi_customer', 'refund'].includes(x)))
+const limitedMods = computed(() => Array.isArray(auth.user?.modules) && auth.user.modules.every((x) => ['penawaran', 'stok_terminal', 'reservasi', 'mobil', 'inventory', 'dr', 'trucking_dr', 'master', 'verifikasi_customer', 'refund', 'permohonan', 'lcr'].includes(x)))
 const has = (m) => !m || !Array.isArray(auth.user?.modules) || auth.user.modules.includes(m)
 const canPenawaran = computed(() => has('penawaran'))
-const canApprove = computed(() => ['penawaran', 'po', 'shipping', 'trucking', 'dr', 'trucking_dr', 'verifikasi_customer', 'refund'].some((m) => has(m)))
-const breakdown = computed(() => [['penawaran', 'home.m.penawaran'], ['po', 'home.m.po'], ['shipping', 'SI'], ['trucking', 'TI'], ['dr', 'DR'], ['trucking_dr', 'Trucking DR'], ['verifikasi_customer', 'Verifikasi Customer'], ['refund', 'Refund']].filter(([k]) => has(k) && inbox.count(k) > 0).map(([k, l]) => `${inbox.count(k)} ${l.startsWith('home.') ? t(l) : l}`).join(' · '))
+const canApprove = computed(() => ['penawaran', 'po', 'shipping', 'trucking', 'dr', 'trucking_dr', 'verifikasi_customer', 'refund', 'permohonan', 'lcr'].some((m) => has(m)))
+const breakdown = computed(() => [['penawaran', 'home.m.penawaran'], ['po', 'home.m.po'], ['shipping', 'SI'], ['trucking', 'TI'], ['dr', 'DR'], ['trucking_dr', 'Trucking DR'], ['verifikasi_customer', 'Verifikasi Customer'], ['refund', 'Refund'], ['permohonan', 'Permohonan'], ['lcr', 'LCR']].filter(([k]) => has(k) && inbox.count(k) > 0).map(([k, l]) => `${inbox.count(k)} ${l.startsWith('home.') ? t(l) : l}`).join(' · '))
 const quick = [
   { key: 'penawaran', label: 'home.m.penawaran', icon: 'doc', to: 'approval', c: 'var(--accent)', mod: 'penawaran' },
   { key: 'inventory', label: 'home.m.inventory', icon: 'box', to: 'inventory', c: '#e07400', mod: 'inventory' },
@@ -62,6 +62,8 @@ const quick = [
   { key: 'verifikasi_customer', label: 'vc.title', icon: 'doc', to: 'verifikasi-customer', c: 'var(--accent)', mod: 'verifikasi_customer' },
   { key: 'master_terminal', label: 'home.m.terminal', icon: 'box', to: 'master-terminal', c: '#0f8b8d', mod: 'master' },
   { key: 'master_vendor', label: 'home.m.vendor', icon: 'cart', to: 'master-vendor', c: '#6d28d9', mod: 'master' },
+  { key: 'permohonan', label: 'pm.title', icon: 'doc', to: 'permohonan', c: '#4f46e5', mod: 'permohonan' },
+  { key: 'lcr', label: 'lcr.title', icon: 'box', to: 'lcr', c: '#0f8b8d', mod: 'lcr' },
   { key: 'refund', label: 'home.m.refund', icon: 'refund', to: 'refund-penerima', c: 'var(--accent)', mod: 'refund' },
   { key: 'shipping', label: 'home.m.shipping', icon: 'ship', to: 'shipping', c: 'var(--accent)', mod: 'shipping' },
   { key: 'trucking', label: 'home.m.trucking', icon: 'truck', to: 'trucking', c: '#e07400', mod: 'trucking' },
@@ -139,6 +141,12 @@ async function openNotif() {
     if (has('refund')) jobs.push(syop.listRefund({ per_page: 6, filter: 'menunggu' }).then((r) => ({
       key: 'refund', to: 'refund-penerima', icon: 'refund', tone: 'green', total: r.meta.total,
       items: r.data.map((n) => ({ id: n.id, title: n.nama, sub: n.customer, when: '', go: { name: 'refund-penerima-detail', params: { id: n.id } } })) })))
+    if (has('permohonan')) jobs.push(syop.listPermohonan({ per_page: 6, filter: 'menunggu' }).then((r) => ({
+      key: 'permohonan', to: 'permohonan', icon: 'doc', tone: 'indigo', total: r.meta.total,
+      items: r.data.map((n) => ({ id: n.id, title: n.customer, sub: n.judul, when: '', go: { name: 'permohonan-detail', params: { id: n.id } } })) })))
+    if (has('lcr')) jobs.push(syop.listLcr({ per_page: 6, filter: 'menunggu' }).then((r) => ({
+      key: 'lcr', to: 'lcr', icon: 'box', tone: 'teal', total: r.meta.total,
+      items: r.data.map((n) => ({ id: n.id, title: n.kode, sub: n.customer, when: '', go: { name: 'lcr-detail', params: { id: n.id } } })) })))
     const groups = (await Promise.all(jobs.map((j) => j.catch(() => null)))).filter((g) => g && g.total > 0)
     notifs.value = groups
     const by = Object.fromEntries(groups.map((g) => [g.key, g.total]))
@@ -150,6 +158,8 @@ async function openNotif() {
     inbox.trucking_dr = by.trucking_dr || 0
     inbox.verifikasi_customer = by.verifikasi_customer || 0
     inbox.refund = by.refund || 0
+    inbox.permohonan = by.permohonan || 0
+    inbox.lcr = by.lcr || 0
   } catch { notifs.value = [] } finally { notifLoading.value = false }
 }
 

@@ -15,6 +15,8 @@ use App\Http\Controllers\MasterTerminalController;
 use App\Http\Controllers\MasterVendorController;
 use App\Http\Controllers\MobilController;
 use App\Http\Controllers\PoController;
+use App\Http\Controllers\LcrController;
+use App\Http\Controllers\PermohonanController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\RefundPenerimaController;
 use App\Http\Controllers\ReservasiController;
@@ -137,6 +139,20 @@ Route::prefix('v1')->group(function () {
         Route::post('{id}/verifikasi', [TruckingDrController::class, 'verify'])->whereNumber('id')->middleware('throttle:30,1');
         Route::post('{id}/revisi', [TruckingDrController::class, 'revise'])->whereNumber('id')->middleware('throttle:30,1');
         Route::post('{id}/kembali-dp', [TruckingDrController::class, 'returnToDp'])->whereNumber('id')->middleware('throttle:10,1');
+    });
+
+    Route::middleware(['auth:sanctum', ModuleAccess::class.':permohonan'])->prefix('permohonan')->group(function () {
+        Route::get('/', [PermohonanController::class, 'index']);
+        Route::get('{id}', [PermohonanController::class, 'show'])->whereNumber('id');
+        Route::get('{id}/berkas', [PermohonanController::class, 'berkas'])->whereNumber('id');
+        Route::post('{id}/keputusan', [PermohonanController::class, 'decide'])->whereNumber('id')->middleware('throttle:20,1');
+    });
+
+    Route::middleware(['auth:sanctum', ModuleAccess::class.':lcr'])->prefix('lcr')->group(function () {
+        Route::get('/', [LcrController::class, 'index']);
+        Route::get('{id}', [LcrController::class, 'show'])->whereNumber('id');
+        Route::get('{id}/gambar/{jenis}/{idx?}', [LcrController::class, 'gambar'])->whereNumber('id')->whereNumber('idx');
+        Route::post('{id}/keputusan', [LcrController::class, 'decide'])->whereNumber('id')->middleware('throttle:20,1');
     });
 
     Route::middleware(['auth:sanctum', ModuleAccess::class.':refund'])->prefix('refund-penerima')->group(function () {

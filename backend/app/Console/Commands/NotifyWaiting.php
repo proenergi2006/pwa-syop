@@ -23,8 +23,8 @@ class NotifyWaiting extends Command
 
     protected $description = 'Kirim push ke user yang punya approval baru menunggu keputusan';
 
-    private const LABEL = ['penawaran' => ['Penawaran', 'offer'], 'po' => ['PO', 'PO'], 'shipping' => ['SI', 'SI'], 'trucking' => ['TI', 'TI'], 'dr' => ['DR', 'DR'], 'trucking_dr' => ['Trucking DR', 'Trucking DR'], 'verifikasi_customer' => ['Verifikasi Customer', 'Verifikasi Customer'], 'refund' => ['Penerima Refund', 'Penerima Refund']];
-    private const URL = ['penawaran' => '/approval', 'po' => '/po', 'shipping' => '/shipping', 'trucking' => '/trucking', 'dr' => '/dr', 'trucking_dr' => '/trucking-dr', 'verifikasi_customer' => '/verifikasi-customer', 'refund' => '/refund-penerima'];
+    private const LABEL = ['penawaran' => ['Penawaran', 'offer'], 'po' => ['PO', 'PO'], 'shipping' => ['SI', 'SI'], 'trucking' => ['TI', 'TI'], 'dr' => ['DR', 'DR'], 'trucking_dr' => ['Trucking DR', 'Trucking DR'], 'verifikasi_customer' => ['Verifikasi Customer', 'Verifikasi Customer'], 'refund' => ['Penerima Refund', 'Penerima Refund'], 'permohonan' => ['Permohonan', 'Permohonan'], 'lcr' => ['LCR', 'LCR']];
+    private const URL = ['penawaran' => '/approval', 'po' => '/po', 'shipping' => '/shipping', 'trucking' => '/trucking', 'dr' => '/dr', 'trucking_dr' => '/trucking-dr', 'verifikasi_customer' => '/verifikasi-customer', 'refund' => '/refund-penerima', 'permohonan' => '/permohonan', 'lcr' => '/lcr'];
     private const MAX_CODES = 2;   // kode yang ditampilkan per modul
     private const MAX_LINES = 3;   // baris modul per notifikasi
 
