@@ -11,6 +11,7 @@ import { errorCode, errorMessage } from '../api/client'
 import { angka } from '../utils/format'
 import { showToast } from '../composables/useToast'
 import { openFile } from '../utils/openFile'
+import { clean } from '../utils/html'
 
 const route = useRoute()
 const router = useRouter()
@@ -107,7 +108,7 @@ onMounted(load)
             <h3>{{ t(s[1]) }}</h3>
             <template v-if="d.evaluasi[s[0]].hasil || d.evaluasi[s[0]].ringkasan">
               <p class="res">{{ d.evaluasi[s[0]].hasil || '-' }}</p>
-              <p class="sum" v-html="d.evaluasi[s[0]].ringkasan || '-'" />
+              <p class="sum" v-html="clean(d.evaluasi[s[0]].ringkasan || '-')" />
               <small class="muted" v-if="d.evaluasi[s[0]].oleh">{{ d.evaluasi[s[0]].oleh }} · {{ d.evaluasi[s[0]].tanggal }}</small>
             </template>
             <p v-else class="muted">{{ t('vc.notYet') }}</p>
@@ -223,16 +224,16 @@ onMounted(load)
           </div>
           <div class="card box">
             <h3>2. {{ t('vc.general') }}</h3>
-            <div v-for="x in r.umum" :key="x.q" class="qa"><b>{{ x.q }}</b><p class="sum" v-html="x.a || '-'" /></div>
+            <div v-for="x in r.umum" :key="x.q" class="qa"><b>{{ x.q }}</b><p class="sum" v-html="clean(x.a || '-')" /></div>
           </div>
           <div class="card box">
             <h3>3. {{ t('vc.oppRisk') }}</h3>
             <dl><dt>Credit Limit Proposed</dt><dd>{{ rp(r.kredit_diajukan) }}</dd></dl>
-            <div class="qa"><b>{{ t('vc.mktNote') }}</b><p class="sum" v-html="r.catatan_marketing || '-'" /></div>
+            <div class="qa"><b>{{ t('vc.mktNote') }}</b><p class="sum" v-html="clean(r.catatan_marketing || '-')" /></div>
           </div>
           <div class="card box">
             <h3>4. {{ t('vc.oldData') }}</h3>
-            <div v-for="x in r.lama" :key="x.q" class="qa"><b>{{ x.q }}</b><p class="sum" v-html="x.a || '-'" /></div>
+            <div v-for="x in r.lama" :key="x.q" class="qa"><b>{{ x.q }}</b><p class="sum" v-html="clean(x.a || '-')" /></div>
           </div>
           <div class="card box">
             <h3>5. {{ t('vc.attach') }}</h3>
@@ -247,6 +248,7 @@ onMounted(load)
 </template>
 
 <style scoped>
+.box .pill { white-space: normal; text-align: left; line-height: 1.4; border-radius: 12px; justify-self: start; max-width: 100%; overflow-wrap: anywhere; }
 .bar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 8px; padding: calc(var(--safe-top) + 8px) 12px 8px; background: var(--glass-bar); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
 .bar-t { flex: 1; text-align: center; font-size: 14.5px; }
 .back { width: 44px; height: 44px; border-radius: 13px; border: 1px solid var(--line); background: var(--card); color: var(--ink); display: grid; place-items: center; }

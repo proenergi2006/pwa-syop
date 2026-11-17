@@ -10,6 +10,7 @@ import * as syop from '../api/syop'
 import { errorCode, errorMessage } from '../api/client'
 import { showToast } from '../composables/useToast'
 import { openFile } from '../utils/openFile'
+import { clean } from '../utils/html'
 
 const route = useRoute()
 const router = useRouter()
@@ -75,8 +76,8 @@ onMounted(load)
           <h3>{{ t('pm.data') }}</h3>
           <dl>
             <dt>{{ t('pm.category') }}</dt><dd>{{ d.kategori || '-' }}</dd>
-            <dt>{{ t('pm.subject') }}</dt><dd>{{ d.judul }}</dd>
-            <dt>{{ t('pm.message') }}</dt><dd>{{ d.pesan || '-' }}</dd>
+            <dt>{{ t('pm.subject') }}</dt><dd class="rich" v-html="clean(d.judul) || '-'" />
+            <dt>{{ t('pm.message') }}</dt><dd class="rich" v-html="clean(d.pesan) || '-'" />
             <dt>Marketing</dt><dd>{{ d.marketing }}</dd>
             <dt>{{ t('vc.date') }}</dt><dd>{{ d.tanggal }}</dd>
             <dt>{{ t('pm.attach') }}</dt>
@@ -87,7 +88,7 @@ onMounted(load)
           <h3>{{ t(s[1]) }}</h3>
           <template v-if="d[s[0]].hasil || d[s[0]].ringkasan">
             <p class="res">{{ d[s[0]].hasil || '-' }}</p>
-            <p class="sum" v-html="d[s[0]].ringkasan || '-'" />
+            <p class="sum" v-html="clean(d[s[0]].ringkasan || '-')" />
             <small v-if="d[s[0]].oleh" class="muted">{{ d[s[0]].oleh }} · {{ d[s[0]].tanggal }}</small>
           </template>
           <p v-else class="muted">{{ t('vc.notYet') }}</p>
@@ -114,6 +115,7 @@ onMounted(load)
 </template>
 
 <style scoped>
+.box .pill { white-space: normal; text-align: left; line-height: 1.4; border-radius: 12px; justify-self: start; max-width: 100%; overflow-wrap: anywhere; }
 .bar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 8px; padding: calc(var(--safe-top) + 8px) 12px 8px; background: var(--glass-bar); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
 .bar-t { flex: 1; text-align: center; font-size: 14.5px; }
 .back { width: 44px; height: 44px; border-radius: 13px; border: 1px solid var(--line); background: var(--card); color: var(--ink); display: grid; place-items: center; }
@@ -124,6 +126,8 @@ h3 { margin: 6px 0 2px; font-size: 13px; text-transform: uppercase; letter-spaci
 dl { display: grid; grid-template-columns: minmax(0, 36%) minmax(0, 1fr); gap: 6px 10px; margin: 0; font-size: 14px; align-items: center; }
 dt { color: var(--muted); } dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
 .res { margin: 0; font-weight: 700; } .sum { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
+.rich :deep(p) { margin: 0 0 6px; }
+.rich :deep(ul), .rich :deep(ol) { margin: 0 0 6px; padding-left: 18px; }
 .lnk { min-height: 32px; padding: 0 12px; font-size: 12px; }
 .rad { display: flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 600; }
 .sel { width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font-size: 15px; font-family: inherit; box-sizing: border-box; }

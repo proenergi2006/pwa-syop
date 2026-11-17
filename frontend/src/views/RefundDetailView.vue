@@ -113,6 +113,7 @@ onMounted(load)
 </template>
 
 <style scoped>
+.box .pill { white-space: normal; text-align: left; line-height: 1.4; border-radius: 12px; justify-self: start; max-width: 100%; overflow-wrap: anywhere; }
 .bar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 8px; padding: calc(var(--safe-top) + 8px) 12px 8px; background: var(--glass-bar); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
 .bar-t { flex: 1; text-align: center; font-size: 14.5px; }
 .back { width: 44px; height: 44px; border-radius: 13px; border: 1px solid var(--line); background: var(--card); color: var(--ink); display: grid; place-items: center; }

@@ -10,6 +10,7 @@ import { useInbox } from '../stores/inbox'
 import { errorCode, errorMessage } from '../api/client'
 import { showToast } from '../composables/useToast'
 import { openFile } from '../utils/openFile'
+import { clean } from '../utils/html'
 
 const route = useRoute()
 const router = useRouter()
@@ -94,7 +95,7 @@ onMounted(load)
             <h3>{{ t(s[1]) }}</h3>
             <template v-if="d[s[0]].hasil || d[s[0]].ringkasan">
               <p class="res">{{ d[s[0]].hasil || '-' }}</p>
-              <p class="sum" v-html="d[s[0]].ringkasan || '-'" />
+              <p class="sum" v-html="clean(d[s[0]].ringkasan || '-')" />
               <small v-if="d[s[0]].oleh" class="muted">{{ d[s[0]].oleh }} · {{ d[s[0]].tanggal }}</small>
             </template>
             <p v-else class="muted">{{ t('vc.notYet') }}</p>
@@ -153,9 +154,9 @@ onMounted(load)
               <dt>Link Google Maps</dt><dd><a v-if="d.lokasi.link_maps" :href="d.lokasi.link_maps" target="_blank" rel="noopener">{{ d.lokasi.link_maps }}</a><template v-else>-</template></dd>
             </dl>
             <p v-if="d.lokasi.latitude && d.lokasi.longitude"><a class="btn btn-ghost btn-sm" :href="`https://www.google.com/maps?q=${d.lokasi.latitude},${d.lokasi.longitude}`" target="_blank" rel="noopener">{{ t('lcr.openMap') }}</a></p>
-            <div class="qa"><b>{{ t('lcr.route') }}</b><p class="sum" v-html="d.lokasi.rute || '-'" /></div>
-            <div class="qa"><b>{{ t('rf.note') }}</b><p class="sum" v-html="d.lokasi.catatan || '-'" /></div>
-            <div class="qa"><b>{{ t('lcr.unloadExplain') }}</b><p class="sum" v-html="d.lokasi.penjelasan_bongkar || '-'" /></div>
+            <div class="qa"><b>{{ t('lcr.route') }}</b><p class="sum" v-html="clean(d.lokasi.rute || '-')" /></div>
+            <div class="qa"><b>{{ t('rf.note') }}</b><p class="sum" v-html="clean(d.lokasi.catatan || '-')" /></div>
+            <div class="qa"><b>{{ t('lcr.unloadExplain') }}</b><p class="sum" v-html="clean(d.lokasi.penjelasan_bongkar || '-')" /></div>
             <p class="files">
               <button v-if="d.lokasi.ada_peta" type="button" class="btn btn-ghost btn-sm" @click="openFile(`/lcr/${id}/gambar/peta`, 'peta')">{{ t('lcr.map') }}</button>
               <button v-if="d.lokasi.ada_layout" type="button" class="btn btn-ghost btn-sm" @click="openFile(`/lcr/${id}/gambar/layout`, 'layout')">{{ t('lcr.layout') }}</button>
@@ -172,8 +173,8 @@ onMounted(load)
                 </div>
               </template>
             </template>
-            <div v-if="d.bongkar.catatan_tangki" class="qa"><b>{{ t('rf.note') }} (tangki)</b><p class="sum" v-html="d.bongkar.catatan_tangki" /></div>
-            <div v-if="d.bongkar.catatan_kapal" class="qa"><b>{{ t('rf.note') }} (kapal)</b><p class="sum" v-html="d.bongkar.catatan_kapal" /></div>
+            <div v-if="d.bongkar.catatan_tangki" class="qa"><b>{{ t('rf.note') }} (tangki)</b><p class="sum" v-html="clean(d.bongkar.catatan_tangki)" /></div>
+            <div v-if="d.bongkar.catatan_kapal" class="qa"><b>{{ t('rf.note') }} (kapal)</b><p class="sum" v-html="clean(d.bongkar.catatan_kapal)" /></div>
           </div>
 
           <div v-if="d.gambar.length" class="card box">
@@ -191,6 +192,7 @@ onMounted(load)
 </template>
 
 <style scoped>
+.box .pill { white-space: normal; text-align: left; line-height: 1.4; border-radius: 12px; justify-self: start; max-width: 100%; overflow-wrap: anywhere; }
 .bar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 8px; padding: calc(var(--safe-top) + 8px) 12px 8px; background: var(--glass-bar); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
 .bar-t { flex: 1; text-align: center; font-size: 14.5px; }
 .back { width: 44px; height: 44px; border-radius: 13px; border: 1px solid var(--line); background: var(--card); color: var(--ink); display: grid; place-items: center; }

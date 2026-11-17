@@ -46,7 +46,13 @@ class PermohonanController extends Controller
     public function waitingItems(AclUser $u): array
     {
         return $this->waiting($this->base($u))->orderByDesc('a.id_cu')->limit(500)->get(['a.id_cu as id', 'b.nama_customer', 'a.judul'])
-            ->mapWithKeys(fn ($x) => [(int) $x->id => $x->nama_customer.' - '.$x->judul])->all();
+            ->mapWithKeys(fn ($x) => [(int) $x->id => $x->nama_customer.' - '.self::teks($x->judul)])->all();
+    }
+
+    /** Judul/pesan dari web bisa berisi HTML: untuk daftar dan notifikasi dijadikan teks polos. */
+    private static function teks(?string $v): string
+    {
+        return trim(preg_replace('/\s+/', ' ', html_entity_decode(strip_tags((string) $v), ENT_QUOTES)));
     }
 
     private static function tgl($v): ?string
@@ -92,7 +98,7 @@ class PermohonanController extends Controller
         return response()->json([
             'data' => collect($page->items())->map(fn ($x) => [
                 'id' => (int) $x->id_cu, 'tanggal' => date('d/m/Y', strtotime($x->created_time)), 'customer' => $x->nama_customer, 'marketing' => $x->fullname,
-                'kategori' => $x->kategori ? (self::KATEGORI[(int) $x->kategori] ?? null) : null, 'judul' => $x->judul, 'status' => self::status($x),
+                'kategori' => $x->kategori ? (self::KATEGORI[(int) $x->kategori] ?? null) : null, 'judul' => self::teks($x->judul), 'status' => self::status($x),
                 'menunggu' => (int) $x->flag_disposisi === 2 && (int) $x->om_result === 0 && (int) $x->flag_approval === 0,
                 'ditolak' => (int) $x->flag_approval === 2,
             ])->all(),
