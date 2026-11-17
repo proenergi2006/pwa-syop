@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\AclUser;
+use App\Models\PushSubscription;
+use App\Services\PushService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -155,5 +157,70 @@ class TruckingDrTest extends TestCase
         $this->assertSame(0, DB::table('pro_trucking_plan')->where('id_plan', $plan)->count());
         $this->assertSame(1, (int) DB::table('pro_trucking_instruction_req')->where('id_master', $ti)->value('status'));
         $this->getJson("/api/v1/trucking-dr/$id")->assertNotFound();
+    }
+
+    private array $sent = [];
+
+    public function recordSent(array $ids, array $payload): void
+    {
+        $this->sent[] = [$ids, $payload];
+    }
+
+    private function listenPush(AclUser $u): void
+    {
+        DB::table('mobile_push_subscriptions')->delete();
+        DB::table('mobile_notify_state')->where('id_user', $u->id_user)->delete();
+        PushSubscription::create(['id_user' => $u->id_user, 'endpoint_hash' => sha1('t'.$u->id_user), 'endpoint' => 'https://example.test/'.$u->id_user, 'p256dh' => 'x', 'auth' => 'y']);
+        $this->sent = [];
+        $self = $this;
+        $this->app->instance(PushService::class, new class($self) extends PushService {
+            public function __construct(private $t) {}
+
+            public function send(array $userIds, array $payload): int
+            {
+                $this->t->recordSent($userIds, $payload);
+
+                return count($userIds);
+            }
+        });
+    }
+
+    public function test_badge_dan_notifikasi_untuk_dr_trucking_baru(): void
+    {
+        $u = $this->as(5);
+        $this->listenPush($u);
+        $before = $this->getJson('/api/v1/badges')->assertOk()->json('trucking_dr');
+
+        $this->artisan('orca:notify-waiting')->assertSuccessful();
+        $this->assertCount(0, $this->sent); // rekaman awal
+
+        $id = $this->pending();
+        $nomor = DB::table('pro_pr_trucking')->where('id_pr_ti', $id)->value('nomor_pr_ti');
+        $this->assertSame($before + 1, $this->getJson('/api/v1/badges')->json('trucking_dr'));
+        $this->artisan('orca:notify-waiting')->assertSuccessful();
+        $this->assertCount(1, $this->sent);
+        $p = $this->sent[0][1];
+        $this->assertStringContainsString("Trucking DR baru: {$nomor}", $p['body']);
+        $this->assertSame('/trucking-dr', $p['url']);
+        $this->assertGreaterThanOrEqual(1, $p['badge']);
+
+        $this->artisan('orca:notify-waiting')->assertSuccessful();
+        $this->assertCount(1, $this->sent); // tidak diulang
+
+        // setelah diverifikasi, tidak lagi dihitung menunggu
+        DB::table('pro_pr_trucking')->where('id_pr_ti', $id)->update(['purchasing_result' => 1, 'disposisi_dr' => 1]);
+        $this->assertSame($before, $this->getJson('/api/v1/badges')->json('trucking_dr'));
+    }
+
+    public function test_modul_baru_di_catatan_lama_hanya_baseline_tidak_membanjiri(): void
+    {
+        $u = $this->as(5);
+        $this->listenPush($u);
+        $this->pending();
+        // catatan lama dari sebelum modul Trucking DR ada: tanpa kunci trucking_dr
+        DB::table('mobile_notify_state')->insert(['id_user' => $u->id_user, 'counts' => '{}', 'items' => json_encode(array_diff_key(array_map(fn ($x) => array_map('intval', array_keys($x)), \App\Services\WaitingCounts::items($u)), ['trucking_dr' => 1])), 'created_at' => now(), 'updated_at' => now()]);
+        $this->artisan('orca:notify-waiting')->assertSuccessful();
+        $this->assertCount(0, $this->sent);
+        $this->assertArrayHasKey('trucking_dr', json_decode(DB::table('mobile_notify_state')->where('id_user', $u->id_user)->value('items'), true));
     }
 }

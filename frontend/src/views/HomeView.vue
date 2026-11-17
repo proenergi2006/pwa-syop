@@ -47,8 +47,8 @@ const logoutOpen = ref(false)
 const limitedMods = computed(() => Array.isArray(auth.user?.modules) && auth.user.modules.every((x) => ['penawaran', 'stok_terminal', 'reservasi', 'mobil', 'inventory', 'dr', 'trucking_dr', 'master'].includes(x)))
 const has = (m) => !m || !Array.isArray(auth.user?.modules) || auth.user.modules.includes(m)
 const canPenawaran = computed(() => has('penawaran'))
-const canApprove = computed(() => ['penawaran', 'po', 'shipping', 'trucking', 'dr'].some((m) => has(m)))
-const breakdown = computed(() => [['penawaran', 'home.m.penawaran'], ['po', 'home.m.po'], ['shipping', 'SI'], ['trucking', 'TI'], ['dr', 'DR']].filter(([k]) => has(k) && inbox.count(k) > 0).map(([k, l]) => `${inbox.count(k)} ${l.startsWith('home.') ? t(l) : l}`).join(' · '))
+const canApprove = computed(() => ['penawaran', 'po', 'shipping', 'trucking', 'dr', 'trucking_dr'].some((m) => has(m)))
+const breakdown = computed(() => [['penawaran', 'home.m.penawaran'], ['po', 'home.m.po'], ['shipping', 'SI'], ['trucking', 'TI'], ['dr', 'DR'], ['trucking_dr', 'Trucking DR']].filter(([k]) => has(k) && inbox.count(k) > 0).map(([k, l]) => `${inbox.count(k)} ${l.startsWith('home.') ? t(l) : l}`).join(' · '))
 const quick = [
   { key: 'penawaran', label: 'home.m.penawaran', icon: 'doc', to: 'approval', c: 'var(--accent)', mod: 'penawaran' },
   { key: 'inventory', label: 'home.m.inventory', icon: 'box', to: 'inventory', c: '#e07400', mod: 'inventory' },
@@ -129,6 +129,9 @@ async function openNotif() {
     if (has('dr')) jobs.push(syop.listDr({ per_page: 6, status: '3' }).then((r) => ({
       key: 'dr', to: 'dr', icon: 'cart', tone: 'violet', total: r.waiting,
       items: r.data.map((n) => ({ id: n.id, title: n.nomor_pr, sub: `${n.customer.join(', ') || '-'} · ${angka(n.volume.reduce((s, v) => s + v, 0))} L`, when: n.tanggal_pr, go: { name: 'dr-detail', params: { id: n.id } } })) })))
+    if (has('trucking_dr')) jobs.push(syop.listTruckingDr({ per_page: 6, status: '0' }).then((r) => ({
+      key: 'trucking_dr', to: 'trucking-dr', icon: 'truck', tone: 'orange', total: r.waiting,
+      items: r.data.map((n) => ({ id: n.id, title: n.nomor_dr, sub: `${n.cabang} · ${angka(n.volume.reduce((s, v) => s + v, 0))} L`, when: n.tanggal, go: { name: 'trucking-dr-detail', params: { id: n.id } } })) })))
     const groups = (await Promise.all(jobs.map((j) => j.catch(() => null)))).filter((g) => g && g.total > 0)
     notifs.value = groups
     const by = Object.fromEntries(groups.map((g) => [g.key, g.total]))
@@ -137,6 +140,7 @@ async function openNotif() {
     inbox.shipping = by.shipping || 0
     inbox.trucking = by.trucking || 0
     inbox.dr = by.dr || 0
+    inbox.trucking_dr = by.trucking_dr || 0
   } catch { notifs.value = [] } finally { notifLoading.value = false }
 }
 
