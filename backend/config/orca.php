@@ -20,6 +20,9 @@ return [
     ],
 
     // Modul => id_role yang boleh memakainya (disalin dari aplikasi web lama).
+    // id_produk pada pengurangan stok depot Trucking DR; web lama menulis angka 15 langsung di kodenya.
+    'trucking_dr_produk' => (int) env('ORCA_TRUCKING_DR_PRODUK', 15),
+
     'module_roles' => [
         'penawaran' => [7, 6, 3, 21],
         'inventory' => [1, 21, 4, 5],
@@ -27,6 +30,8 @@ return [
         'harga' => [21], // Master harga jual (daftar, tambah, ubah, hapus)
         'po' => [21], // Verifikasi PO Supplier: tahap CEO (CFO menyusul)
         'dr' => [5], // Delivery Request: verifikasi Purchasing
+        'master' => [5], // Master Terminal dan Master Vendor: Purchasing/Procurement
+        'trucking_dr' => [5], // Trucking Delivery Request: verifikasi Purchasing/Procurement
         'trucking' => [21], // Trucking Instruction: persetujuan CEO
         'shipping' => [21], // Shipping Instruction: persetujuan akhir CEO
         'mobil' => ['*'], // Peminjaman mobil: semua peran, mobil sesuai cabang pengguna

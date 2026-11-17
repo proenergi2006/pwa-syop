@@ -10,3 +10,6 @@
 .claude/
 .idea/
 .vscode/
+/tutorial-video/node_modules/
+/tutorial-video/out/
+/php/

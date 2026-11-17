@@ -15,10 +15,16 @@ const router = createRouter({
     { path: '/mobil', name: 'mobil', component: () => import('../views/MobilView.vue'), meta: { nav: true, module: 'mobil' } },
     { path: '/trucking', name: 'trucking', component: () => import('../views/TruckingView.vue'), meta: { nav: true, module: 'trucking' } },
     { path: '/trucking/:id(\\d+)', name: 'trucking-detail', component: () => import('../views/TruckingDetailView.vue'), props: true, meta: { module: 'trucking' } },
+    { path: '/master-terminal', name: 'master-terminal', component: () => import('../views/MasterTerminalView.vue'), meta: { nav: true, module: 'master' } },
+    { path: '/master-terminal/form', name: 'master-terminal-form', component: () => import('../views/MasterTerminalFormView.vue'), meta: { module: 'master' } },
+    { path: '/master-vendor', name: 'master-vendor', component: () => import('../views/MasterVendorView.vue'), meta: { nav: true, module: 'master' } },
+    { path: '/master-vendor/form', name: 'master-vendor-form', component: () => import('../views/MasterVendorFormView.vue'), meta: { module: 'master' } },
     { path: '/produk', name: 'produk', component: () => import('../views/ProdukView.vue'), meta: { nav: true, module: 'produk' } },
     { path: '/produk/form', name: 'produk-form', component: () => import('../views/ProdukFormView.vue'), meta: { module: 'produk' } },
     { path: '/produk/:id(\\d+)', name: 'produk-detail', component: () => import('../views/ProdukDetailView.vue'), props: true, meta: { module: 'produk' } },
     { path: '/dr', name: 'dr', component: () => import('../views/DrView.vue'), meta: { nav: true, module: 'dr' } },
+    { path: '/trucking-dr', name: 'trucking-dr', component: () => import('../views/TruckingDrView.vue'), meta: { nav: true, module: 'trucking_dr' } },
+    { path: '/trucking-dr/:id(\\d+)', name: 'trucking-dr-detail', component: () => import('../views/TruckingDrDetailView.vue'), props: true, meta: { module: 'trucking_dr' } },
     { path: '/dr/:id(\\d+)', name: 'dr-detail', component: () => import('../views/DrDetailView.vue'), props: true, meta: { module: 'dr' } },
     { path: '/harga', name: 'harga', component: () => import('../views/HargaView.vue'), meta: { nav: true, module: 'harga' } },
     { path: '/harga/detail', name: 'harga-detail', component: () => import('../views/HargaDetailView.vue'), meta: { module: 'harga' } },
@@ -35,7 +41,7 @@ const router = createRouter({
 
 router.beforeEach((to, from) => {
   // Detail masuk dari kanan, kembali ke kiri; antar tab memudar naik.
-  navDir.value = ['approval-detail', 'shipping-detail', 'trucking-detail', 'dr-detail', 'po-detail', 'harga-detail', 'harga-form', 'produk-detail', 'produk-form'].includes(to.name) ? 'slide-left' : ['approval-detail', 'shipping-detail', 'trucking-detail', 'dr-detail', 'po-detail', 'harga-detail', 'harga-form', 'produk-detail', 'produk-form'].includes(from.name) ? 'slide-right' : 'fade-up'
+  navDir.value = ['approval-detail', 'shipping-detail', 'trucking-detail', 'dr-detail', 'trucking-dr-detail', 'po-detail', 'harga-detail', 'harga-form', 'produk-detail', 'produk-form', 'master-terminal-form', 'master-vendor-form'].includes(to.name) ? 'slide-left' : ['approval-detail', 'shipping-detail', 'trucking-detail', 'dr-detail', 'trucking-dr-detail', 'po-detail', 'harga-detail', 'harga-form', 'produk-detail', 'produk-form', 'master-terminal-form', 'master-vendor-form'].includes(from.name) ? 'slide-right' : 'fade-up'
   if (!to.meta.public && !tokenStore.get()) return { name: 'login' }
   if (to.name === 'login' && tokenStore.get()) return { name: 'home' }
   // Modul yang tidak tersedia untuk peran ini kembali ke Beranda.

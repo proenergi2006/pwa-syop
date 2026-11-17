@@ -8,8 +8,11 @@ use App\Http\Controllers\HargaController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ShippingController;
 use App\Http\Controllers\TruckingController;
+use App\Http\Controllers\TruckingDrController;
 use App\Http\Middleware\ModuleAccess;
 use App\Http\Controllers\PenawaranController;
+use App\Http\Controllers\MasterTerminalController;
+use App\Http\Controllers\MasterVendorController;
 use App\Http\Controllers\MobilController;
 use App\Http\Controllers\PoController;
 use App\Http\Controllers\ProdukController;
@@ -73,6 +76,19 @@ Route::prefix('v1')->group(function () {
         Route::delete('{id}', [MobilController::class, 'destroy'])->whereNumber('id')->middleware('throttle:30,1');
     });
 
+    Route::middleware(['auth:sanctum', ModuleAccess::class.':master'])->prefix('master')->group(function () {
+        Route::get('terminal/options', [MasterTerminalController::class, 'options']);
+        Route::get('terminal', [MasterTerminalController::class, 'index']);
+        Route::get('terminal/{id}', [MasterTerminalController::class, 'show'])->whereNumber('id');
+        Route::post('terminal', [MasterTerminalController::class, 'store'])->middleware('throttle:30,1');
+        Route::put('terminal/{id}', [MasterTerminalController::class, 'update'])->whereNumber('id')->middleware('throttle:30,1');
+        Route::get('vendor/kode-terakhir', [MasterVendorController::class, 'lastCode'])->middleware('throttle:20,1');
+        Route::get('vendor', [MasterVendorController::class, 'index']);
+        Route::get('vendor/{id}', [MasterVendorController::class, 'show'])->whereNumber('id');
+        Route::post('vendor', [MasterVendorController::class, 'store'])->middleware('throttle:30,1');
+        Route::put('vendor/{id}', [MasterVendorController::class, 'update'])->whereNumber('id')->middleware('throttle:30,1');
+    });
+
     Route::middleware(['auth:sanctum', ModuleAccess::class.':produk'])->prefix('produk')->group(function () {
         Route::get('/', [ProdukController::class, 'index']);
         Route::get('{id}', [ProdukController::class, 'show'])->whereNumber('id');
@@ -110,6 +126,15 @@ Route::prefix('v1')->group(function () {
         Route::post('{id}/revisi', [DrController::class, 'revise'])->whereNumber('id')->middleware('throttle:30,1');
         Route::post('{id}/kembali-dp', [DrController::class, 'returnToDp'])->whereNumber('id')->middleware('throttle:10,1');
         Route::post('{id}/reset-split', [DrController::class, 'resetSplit'])->whereNumber('id')->middleware('throttle:10,1');
+    });
+
+    Route::middleware(['auth:sanctum', ModuleAccess::class.':trucking_dr'])->prefix('trucking-dr')->group(function () {
+        Route::get('/', [TruckingDrController::class, 'index']);
+        Route::get('{id}', [TruckingDrController::class, 'show'])->whereNumber('id');
+        Route::get('{id}/po-supplier', [TruckingDrController::class, 'poSupplier'])->whereNumber('id');
+        Route::post('{id}/verifikasi', [TruckingDrController::class, 'verify'])->whereNumber('id')->middleware('throttle:30,1');
+        Route::post('{id}/revisi', [TruckingDrController::class, 'revise'])->whereNumber('id')->middleware('throttle:30,1');
+        Route::post('{id}/kembali-dp', [TruckingDrController::class, 'returnToDp'])->whereNumber('id')->middleware('throttle:10,1');
     });
 
     Route::middleware(['auth:sanctum', ModuleAccess::class.':trucking'])->prefix('trucking')->group(function () {
