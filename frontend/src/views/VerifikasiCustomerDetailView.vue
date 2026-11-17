@@ -10,6 +10,7 @@ import * as syop from '../api/syop'
 import { errorCode, errorMessage } from '../api/client'
 import { angka } from '../utils/format'
 import { showToast } from '../composables/useToast'
+import { openFile } from '../utils/openFile'
 
 const route = useRoute()
 const router = useRouter()
@@ -99,8 +100,8 @@ onMounted(load)
           </div>
           <div v-if="d.evaluasi.kyc.length" class="card box">
             <h3>{{ t('vc.kyc') }}</h3>
-            <p v-for="(k, i) in d.evaluasi.kyc" :key="i" class="row"><Icon name="doc" :size="16" /> {{ k.nama }}<small v-if="k.file"> · {{ k.file }}</small></p>
-            <small class="muted">{{ t('vc.fileNote') }}</small>
+            <p v-for="k in d.evaluasi.kyc" :key="k.idx" class="row"><Icon name="doc" :size="16" /> <span class="grow">{{ k.nama }}<small v-if="k.file"> · {{ k.file }}</small></span>
+              <button v-if="k.file" type="button" class="btn btn-ghost btn-sm" @click="openFile(`/verifikasi-customer/${id}/berkas/kyc/${k.idx}`, k.file)">{{ t('vc.view') }}</button></p>
           </div>
           <div v-for="s in [['finance', 'vc.s.finance'], ['logistik', 'vc.s.logistik'], ['bm', 'vc.s.bm'], ['om', 'vc.s.om']]" :key="s[0]" class="card box">
             <h3>{{ t(s[1]) }}</h3>
@@ -173,9 +174,9 @@ onMounted(load)
           <div class="card box">
             <h3>{{ t('vc.docs') }}</h3>
             <dl>
-              <template v-for="x in c.dokumen" :key="x.nama"><dt>{{ x.nama }}</dt><dd>{{ x.nomor || '-' }}<small v-if="x.file" class="muted"> · {{ x.file }}</small></dd></template>
+              <template v-for="x in c.dokumen" :key="x.kunci"><dt>{{ x.nama }}</dt><dd>{{ x.nomor || '-' }}
+                <button v-if="x.file" type="button" class="btn btn-ghost btn-sm lnk" @click="openFile(`/verifikasi-customer/${id}/berkas/legal/${x.kunci}`, x.file)">{{ t('vc.view') }}</button></dd></template>
             </dl>
-            <small class="muted">{{ t('vc.fileNote') }}</small>
           </div>
           <div class="card box">
             <h3>2. Person In Charge</h3>
@@ -235,9 +236,9 @@ onMounted(load)
           </div>
           <div class="card box">
             <h3>5. {{ t('vc.attach') }}</h3>
-            <p v-for="(f, i) in r.lampiran" :key="i" class="row"><Icon name="doc" :size="16" /> {{ f }}</p>
+            <p v-for="f in r.lampiran" :key="f.no" class="row"><Icon name="doc" :size="16" /> <span class="grow">{{ f.nama }}</span>
+              <button type="button" class="btn btn-ghost btn-sm" @click="openFile(`/verifikasi-customer/${id}/berkas/review/${f.no}`, f.nama)">{{ t('vc.view') }}</button></p>
             <p v-if="!r.lampiran.length" class="muted">-</p>
-            <small v-else class="muted">{{ t('vc.fileNote') }}</small>
           </div>
         </template>
       </template>
@@ -260,6 +261,8 @@ dt { color: var(--muted); } dd { margin: 0; font-weight: 600; overflow-wrap: any
 .pic { display: grid; gap: 2px; padding: 6px 0; border-top: 1px dashed var(--line); font-size: 14px; }
 .qa { display: grid; gap: 2px; padding: 6px 0; border-top: 1px dashed var(--line); font-size: 13px; }
 .qa b { font-weight: 600; color: var(--muted); }
+.grow { flex: 1; min-width: 0; }
+.lnk { margin-left: 8px; min-height: 32px; padding: 0 12px; font-size: 12px; }
 .rad { display: flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 600; }
 .sel { width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font-size: 15px; font-family: inherit; box-sizing: border-box; }
 </style>

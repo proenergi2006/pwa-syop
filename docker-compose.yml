@@ -13,6 +13,7 @@ services:
       - "host.docker.internal:host-gateway"   # bila MySQL berjalan di host yang sama (DB_HOST=host.docker.internal)
     volumes:
       - storage:/var/www/html/storage
+      - ${ORCA_WEB_FILES_HOST:-./legacy-web}:/var/www/legacy-web:ro   # folder induk web lama (berisi files/uploaded_user), isi ORCA_WEB_FILES_HOST di .env root
     healthcheck:
       test: ["CMD-SHELL", "pgrep php-fpm >/dev/null || exit 1"]
       interval: 30s
@@ -32,6 +33,7 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - storage:/var/www/html/storage
+      - ${ORCA_WEB_FILES_HOST:-./legacy-web}:/var/www/legacy-web:ro   # folder induk web lama (berisi files/uploaded_user), isi ORCA_WEB_FILES_HOST di .env root
     depends_on:
       - app
 

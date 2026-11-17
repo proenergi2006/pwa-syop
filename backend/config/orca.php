@@ -23,6 +23,9 @@ return [
     // id_produk pada pengurangan stok depot Trucking DR; web lama menulis angka 15 langsung di kodenya.
     'trucking_dr_produk' => (int) env('ORCA_TRUCKING_DR_PRODUK', 15),
 
+    // Folder induk web lama (berisi files/uploaded_user), dipasang baca-saja ke container. Dipakai untuk membuka lampiran.
+    'web_files' => env('ORCA_WEB_FILES', '/var/www/legacy-web'),
+
     'module_roles' => [
         'penawaran' => [7, 6, 3, 21],
         'inventory' => [1, 21, 4, 5],
@@ -32,6 +35,7 @@ return [
         'dr' => [5], // Delivery Request: verifikasi Purchasing
         'master' => [5], // Master Terminal dan Master Vendor: Purchasing/Procurement
         'trucking_dr' => [5], // Trucking Delivery Request: verifikasi Purchasing/Procurement
+        'refund' => [7, 21], // Penerima Refund: verifikasi BM lalu CEO
         'verifikasi_customer' => [7, 6], // Verifikasi Data Customer: BM dan OM
         'trucking' => [21], // Trucking Instruction: persetujuan CEO
         'shipping' => [21], // Shipping Instruction: persetujuan akhir CEO

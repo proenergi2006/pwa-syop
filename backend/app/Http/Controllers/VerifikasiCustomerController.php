@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\StepUp;
 use App\Models\AclUser;
 use App\Services\Accurate\AccurateClient;
 use App\Services\ApprovalMail;
+use App\Services\LegacyFile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -190,11 +191,12 @@ class VerifikasiCustomerController extends Controller
             'CBD' => 'CBD (Cash Before Delivery)', 'COD' => 'COD (Cash On Delivery)', default => '-',
         };
         $legal = json_decode((string) $x->legal_data, true) ?: [];
-        $kyc = collect(json_decode((string) $x->finance_data_kyc, true) ?: [])->map(fn ($k) => [
-            'nama' => $k['nama_file'] ?? '', 'file' => $k['file_upload_ori'] ?? '',
+        $kyc = collect(array_values(json_decode((string) $x->finance_data_kyc, true) ?: []))->map(fn ($k, $i) => [
+            'idx' => $i, 'nama' => $k['nama_file'] ?? '', 'file' => $k['file_upload_ori'] ?? '',
         ])->filter(fn ($k) => $k['nama'] !== '')->values()->all();
         $lampiranReview = DB::table('pro_customer_review_attchment')->where('id_review', $x->id_review)->where('id_verification', $id)
-            ->orderBy('no_urut')->pluck('review_attach_ori')->filter()->values()->all();
+            ->orderBy('no_urut')->get(['no_urut', 'review_attach_ori'])->filter(fn ($f) => $f->review_attach_ori)
+            ->map(fn ($f) => ['no' => (int) $f->no_urut, 'nama' => $f->review_attach_ori])->values()->all();
         $ownership = [1 => 'Affiliation', 2 => 'National Private', 3 => 'Foreign Private', 4 => 'Joint Venture', 5 => 'BUMN / BUMD', 6 => 'Foundation', 7 => 'Personal', 8 => $x->ownership_lain][(int) $x->ownership] ?? '-';
         $x->ownership_label = $ownership;
 
@@ -253,10 +255,10 @@ class VerifikasiCustomerController extends Controller
             'alamat_invoice' => $x->invoice_delivery_addr_primary,
             'pic_invoice' => ['nama' => $x->pic_invoice_name, 'hp' => $x->pic_invoice_mobile, 'jabatan' => $x->pic_invoice_position, 'email' => $x->pic_invoice_email],
             'dokumen' => [
-                ['nama' => 'Certificate (Akta Pendirian)', 'nomor' => $legal[0]['nomor'] ?? $x->nomor_sertifikat, 'file' => $berkas($x->nomor_sertifikat_file)],
-                ['nama' => 'NPWP', 'nomor' => $legal[1]['nomor'] ?? $x->nomor_npwp, 'file' => $berkas($x->nomor_npwp_file)],
-                ['nama' => 'SIUP', 'nomor' => $legal[2]['nomor'] ?? $x->nomor_siup, 'file' => $berkas($x->nomor_siup_file)],
-                ['nama' => 'TDP', 'nomor' => $legal[3]['nomor'] ?? $x->nomor_tdp, 'file' => $berkas($x->nomor_tdp_file)],
+                ['kunci' => 'sert', 'nama' => 'Certificate (Akta Pendirian)', 'nomor' => $legal[0]['nomor'] ?? $x->nomor_sertifikat, 'file' => $berkas($x->nomor_sertifikat_file)],
+                ['kunci' => 'npwp', 'nama' => 'NPWP', 'nomor' => $legal[1]['nomor'] ?? $x->nomor_npwp, 'file' => $berkas($x->nomor_npwp_file)],
+                ['kunci' => 'siup', 'nama' => 'SIUP', 'nomor' => $legal[2]['nomor'] ?? $x->nomor_siup, 'file' => $berkas($x->nomor_siup_file)],
+                ['kunci' => 'tdp', 'nama' => 'TDP', 'nomor' => $legal[3]['nomor'] ?? $x->nomor_tdp, 'file' => $berkas($x->nomor_tdp_file)],
             ],
             'pic' => [
                 'Director / Owner' => $pic('decision'), 'Procurement' => $pic('ordering'), 'Finance / Billing' => $pic('billing'), 'Fuelman' => $pic('fuelman'),
@@ -315,6 +317,33 @@ class VerifikasiCustomerController extends Controller
             ],
             'lampiran' => $lampiran,
         ];
+    }
+
+    /** Berkas: jenis kyc ({ref}=urutan), review ({ref}=no_urut), legal ({ref}=sert|npwp|siup|tdp). Sama dengan download-file.php tipe 3, 2, dan folder images. */
+    public function berkas(Request $r, int $id, string $jenis, string $ref)
+    {
+        if (! $this->find($r, $id)) {
+            return response()->json(['message' => 'Data verifikasi tidak ditemukan.'], 404);
+        }
+        $v = DB::table('pro_customer_verification')->where('id_verification', $id)->first();
+        if ($jenis === 'kyc') {
+            $k = array_values(json_decode((string) $v->finance_data_kyc, true) ?: [])[(int) $ref] ?? null;
+
+            return LegacyFile::response($k ? LegacyFile::fromStored($k['filenya'] ?? '') : null, $k['file_upload_ori'] ?? 'kyc');
+        }
+        if ($jenis === 'review') {
+            $rev = DB::table('pro_customer_review')->where('id_verification', $id)->value('id_review');
+            $f = DB::table('pro_customer_review_attchment')->where('id_review', $rev)->where('id_verification', $id)->where('no_urut', (int) $ref)->first();
+
+            return LegacyFile::response($f ? 'lampiran/RA_'.$rev.'_'.$f->no_urut.'_'.basename($f->review_attach_ori) : null, $f->review_attach_ori ?? 'lampiran');
+        }
+        $c = DB::table('pro_customer')->where('id_customer', $v->id_customer)->first();
+        $peta = ['sert' => ['sert_file', $c->nomor_sertifikat_file], 'npwp' => ['npwp_file', $c->nomor_npwp_file], 'siup' => ['siup_file', $c->nomor_siup_file], 'tdp' => ['tdp_file', $c->nomor_tdp_file]];
+        if ($jenis !== 'legal' || ! isset($peta[$ref]) || ! $peta[$ref][1]) {
+            return response()->json(['message' => 'Berkas tidak ditemukan.', 'code' => 'FILE_MISSING'], 404);
+        }
+
+        return LegacyFile::response('images/'.$peta[$ref][0].$c->id_customer.'_'.basename($peta[$ref][1]), $peta[$ref][1]);
     }
 
     /** Keputusan BM/OM: result 1 setuju, 2 tolak; summary wajib. */

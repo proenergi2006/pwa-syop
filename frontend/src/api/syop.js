@@ -105,3 +105,6 @@ export const updateVendor = (id, p) => api.put(`/master/vendor/${id}`, p).then((
 export const listVerifikasiCustomer = (params = {}) => api.get('/verifikasi-customer', { params }).then((r) => r.data)
 export const getVerifikasiCustomer = (id) => api.get(`/verifikasi-customer/${id}`).then((r) => r.data)
 export const decideVerifikasiCustomer = (id, p) => api.post(`/verifikasi-customer/${id}/keputusan`, p).then((r) => r.data)
+export const listRefund = (params = {}) => api.get('/refund-penerima', { params }).then((r) => r.data)
+export const getRefund = (id) => api.get(`/refund-penerima/${id}`).then((r) => r.data)
+export const decideRefund = (id, p) => api.post(`/refund-penerima/${id}/keputusan`, p).then((r) => r.data)

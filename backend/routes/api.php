@@ -16,6 +16,7 @@ use App\Http\Controllers\MasterVendorController;
 use App\Http\Controllers\MobilController;
 use App\Http\Controllers\PoController;
 use App\Http\Controllers\ProdukController;
+use App\Http\Controllers\RefundPenerimaController;
 use App\Http\Controllers\ReservasiController;
 use App\Http\Controllers\VerifikasiCustomerController;
 use App\Http\Controllers\ProfilePhotoController;
@@ -138,9 +139,17 @@ Route::prefix('v1')->group(function () {
         Route::post('{id}/kembali-dp', [TruckingDrController::class, 'returnToDp'])->whereNumber('id')->middleware('throttle:10,1');
     });
 
+    Route::middleware(['auth:sanctum', ModuleAccess::class.':refund'])->prefix('refund-penerima')->group(function () {
+        Route::get('/', [RefundPenerimaController::class, 'index']);
+        Route::get('{id}', [RefundPenerimaController::class, 'show'])->whereNumber('id');
+        Route::get('{id}/berkas/{jenis}', [RefundPenerimaController::class, 'berkas'])->whereNumber('id')->where('jenis', 'ktp|npwp');
+        Route::post('{id}/keputusan', [RefundPenerimaController::class, 'decide'])->whereNumber('id')->middleware('throttle:20,1');
+    });
+
     Route::middleware(['auth:sanctum', ModuleAccess::class.':verifikasi_customer'])->prefix('verifikasi-customer')->group(function () {
         Route::get('/', [VerifikasiCustomerController::class, 'index']);
         Route::get('{id}', [VerifikasiCustomerController::class, 'show'])->whereNumber('id');
+        Route::get('{id}/berkas/{jenis}/{ref}', [VerifikasiCustomerController::class, 'berkas'])->whereNumber('id')->where('jenis', 'kyc|review|legal');
         Route::post('{id}/keputusan', [VerifikasiCustomerController::class, 'decide'])->whereNumber('id')->middleware('throttle:20,1');
     });
 
