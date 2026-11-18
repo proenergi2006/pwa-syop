@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use App\Services\LegacyFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Report Marketing untuk OM (peran 6). Hanya baca.
@@ -163,6 +164,9 @@ class ReportMarketingController extends Controller
 
     private function laporan(Request $r, string $jenis): JsonResponse
     {
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(120); // query riwayat PO besar; batas nginx 90 detik
+        }
         $tahun = $this->tahun($r);
         $cabang = $this->cabang($r);
         $fn = ['volume' => 'volumeBaris', 'aktif' => 'aktifBaris', 'baru' => 'baruBaris', 'kegiatan' => 'kegiatanBaris'][$jenis];
@@ -335,11 +339,33 @@ class ReportMarketingController extends Controller
     /** Hasil disposisi terakhir; ditulis persis seperti query web (id_disposisi dibandingkan dengan MAX(disposisi)). */
     private const HASIL_TERAKHIR = '(SELECT result FROM pro_marketing_report_master_disposisi WHERE id_disposisi = (SELECT MAX(disposisi) FROM pro_marketing_report_master_disposisi WHERE id_mkt_report = a.id_mkt_report) AND id_mkt_report = a.id_mkt_report)';
 
-    private const DARI_KEGIATAN = 'FROM pro_marketing_report_master a
-        JOIN acl_user b ON b.id_user = a.create_by
-        JOIN pro_master_area c ON c.id_master = b.id_wilayah
-        JOIN pro_customer d ON a.id_customer = d.id_customer
-        WHERE a.deleted_time IS NULL';
+    /**
+     * Di web filter hapus ditulis tanpa alias ("deleted_time is null"), jadi kolom itu milik SALAH SATU tabel pada query
+     * (di server bukan milik pro_marketing_report_master). Dicari sekali lalu dipakai pada alias yang benar; bila tidak ada, tanpa filter.
+     */
+    private static function kondisiHapus(): string
+    {
+        $alias = Cache::remember('rpt-mkt:alias-deleted', 3600, function () {
+            foreach (['a' => 'pro_marketing_report_master', 'd' => 'pro_customer', 'b' => 'acl_user', 'c' => 'pro_master_area'] as $a => $tbl) {
+                if (Schema::hasColumn($tbl, 'deleted_time')) {
+                    return $a;
+                }
+            }
+
+            return '-';
+        });
+
+        return $alias === '-' ? '' : " AND $alias.deleted_time IS NULL";
+    }
+
+    private static function dariKegiatan(): string
+    {
+        return 'FROM pro_marketing_report_master a
+            JOIN acl_user b ON b.id_user = a.create_by
+            JOIN pro_master_area c ON c.id_master = b.id_wilayah
+            JOIN pro_customer d ON a.id_customer = d.id_customer
+            WHERE 1 = 1'.self::kondisiHapus();
+    }
 
     private static function labelStatus($status, $hasil): string
     {
@@ -354,7 +380,7 @@ class ReportMarketingController extends Controller
     private function kegiatanBaris(int $tahun, ?int $cabang): array
     {
         [$a, $b] = self::rentangTahun($tahun);
-        $sql = 'SELECT b.id_user, b.fullname, '.self::kolomBulan(fn ($m) => "COUNT(CASE WHEN MONTH(a.tanggal) = $m THEN 1 END)").' '.self::DARI_KEGIATAN.'
+        $sql = 'SELECT b.id_user, b.fullname, '.self::kolomBulan(fn ($m) => "COUNT(CASE WHEN MONTH(a.tanggal) = $m THEN 1 END)").' '.self::dariKegiatan().'
             AND a.tanggal >= ? AND a.tanggal < ?'.($cabang ? ' AND b.id_wilayah = ?' : '').'
             GROUP BY b.id_user, b.fullname ORDER BY b.fullname ASC';
 
@@ -368,13 +394,14 @@ class ReportMarketingController extends Controller
         $where = ' AND a.tanggal >= ? AND a.tanggal < ?'.($cabang ? ' AND b.id_wilayah = ?' : '');
         $par = array_filter([$a, $b, $cabang], fn ($v) => $v !== null);
 
+        // Hasil disposisi dihitung di tabel turunan, baru dikelompokkan: aman untuk ONLY_FULL_GROUP_BY (MySQL 8).
         $per = [];
-        foreach (DB::select('SELECT a.status AS st, '.self::HASIL_TERAKHIR.' AS hasil, COUNT(*) AS n '.self::DARI_KEGIATAN.$where.' GROUP BY a.status, hasil', $par) as $x) {
+        foreach (DB::select('SELECT x.st, x.hasil, COUNT(*) AS n FROM (SELECT a.status AS st, '.self::HASIL_TERAKHIR.' AS hasil '.self::dariKegiatan().$where.') x GROUP BY x.st, x.hasil', $par) as $x) {
             $l = self::labelStatus($x->st, $x->hasil);
             $per[$l] = ($per[$l] ?? 0) + (int) $x->n;
         }
         arsort($per);
-        $cust = (int) (DB::selectOne('SELECT COUNT(DISTINCT a.id_customer) AS n '.self::DARI_KEGIATAN.$where, $par)->n ?? 0);
+        $cust = (int) (DB::selectOne('SELECT COUNT(DISTINCT a.id_customer) AS n '.self::dariKegiatan().$where, $par)->n ?? 0);
 
         return ['status' => array_map(fn ($l, $n) => ['label' => $l, 'jumlah' => $n], array_keys($per), array_values($per)), 'customer' => $cust];
     }
@@ -412,8 +439,8 @@ class ReportMarketingController extends Controller
             array_push($par, $like, $like, $like, $like, $like, $like, $like);
         }
 
-        $total = (int) DB::selectOne('SELECT COUNT(*) AS n '.self::DARI_KEGIATAN.$where, $par)->n;
-        $rows = DB::select('SELECT a.id_mkt_report, a.tanggal, a.kegiatan, a.status, d.nama_customer, b.fullname, '.self::HASIL_TERAKHIR.' AS hasil '.self::DARI_KEGIATAN.$where
+        $total = (int) DB::selectOne('SELECT COUNT(*) AS n '.self::dariKegiatan().$where, $par)->n;
+        $rows = DB::select('SELECT a.id_mkt_report, a.tanggal, a.kegiatan, a.status, d.nama_customer, b.fullname, '.self::HASIL_TERAKHIR.' AS hasil '.self::dariKegiatan().$where
             .' ORDER BY a.create_date DESC, a.id_mkt_report DESC LIMIT '.$per.' OFFSET '.(($page - 1) * $per), $par);
 
         return response()->json([
@@ -427,7 +454,7 @@ class ReportMarketingController extends Controller
 
     private function kegiatanBaris1(int $id): ?object
     {
-        return DB::selectOne('SELECT a.*, d.nama_customer, d.alamat_customer, d.email_customer, d.telp_customer, b.fullname AS user_name, '.self::HASIL_TERAKHIR.' AS hasil '.self::DARI_KEGIATAN.' AND a.id_mkt_report = ?', [$id]);
+        return DB::selectOne('SELECT a.*, d.nama_customer, d.alamat_customer, d.email_customer, d.telp_customer, b.fullname AS user_name, '.self::HASIL_TERAKHIR.' AS hasil '.self::dariKegiatan().' AND a.id_mkt_report = ?', [$id]);
     }
 
     public function kegiatanShow(int $id): JsonResponse
@@ -438,10 +465,10 @@ class ReportMarketingController extends Controller
         }
         $tahap = DB::select('SELECT disposisi, catatan, tanggal, result, pic FROM pro_marketing_report_master_disposisi WHERE id_mkt_report = ? ORDER BY id_disposisi ASC', [$id]);
         $files = [];
-        if ($x->file_upload) {
-            $files[] = ['id' => 0, 'nama' => $x->file_ori ?: $x->file_upload, 'keterangan' => null];
+        if (! empty($x->file_upload)) {
+            $files[] = ['id' => 0, 'nama' => ($x->file_ori ?? null) ?: $x->file_upload, 'keterangan' => null];
         }
-        foreach (DB::select('SELECT id_file_upload, keterangan, file_upload, file_ori FROM pro_marketing_report_master_file WHERE id_mkt_report = ? ORDER BY id_file_upload', [$id]) as $f) {
+        foreach (! Schema::hasTable('pro_marketing_report_master_file') ? [] : DB::select('SELECT id_file_upload, keterangan, file_upload, file_ori FROM pro_marketing_report_master_file WHERE id_mkt_report = ? ORDER BY id_file_upload', [$id]) as $f) {
             if ($f->file_upload) {
                 $files[] = ['id' => (int) $f->id_file_upload, 'nama' => $f->file_ori ?: $f->file_upload, 'keterangan' => $f->keterangan];
             }
@@ -463,7 +490,10 @@ class ReportMarketingController extends Controller
             return response()->json(['message' => 'Data kegiatan tidak ditemukan.'], 404);
         }
         if ($fid === 0) {
-            $row = DB::table('pro_marketing_report_master')->where('id_mkt_report', $id)->first(['file_upload', 'file_ori']);
+            $row = Schema::hasColumn('pro_marketing_report_master', 'file_upload') && Schema::hasColumn('pro_marketing_report_master', 'file_ori')
+                ? DB::table('pro_marketing_report_master')->where('id_mkt_report', $id)->first(['file_upload', 'file_ori']) : null;
+        } elseif (! Schema::hasTable('pro_marketing_report_master_file')) {
+            $row = null;
         } else {
             $row = DB::table('pro_marketing_report_master_file')->where('id_mkt_report', $id)->where('id_file_upload', $fid)->first(['file_upload', 'file_ori']);
         }

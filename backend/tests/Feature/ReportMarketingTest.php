@@ -129,22 +129,31 @@ class ReportMarketingTest extends TestCase
         $this->getJson("/api/v1/report/marketing/volume?tahun=1'; DROP TABLE x;--")->assertOk();
     }
 
-    /** Tiga kegiatan uji untuk satu marketing pada Maret 2024: draf, ajukan ke SPV (belum diputus), dan ke BM (sudah ada hasil). */
+    /** Tiga kegiatan uji untuk satu marketing pada Maret 2024: draf, ajukan ke SPV (belum diputus), dan ke BM (sudah ada hasil). Lampiran hanya diisi bila skema punya kolom/tabelnya. */
     private function siapkanKegiatan(): array
     {
-        if (! Schema::hasTable('pro_marketing_report_master_file') || ! Schema::hasColumn('pro_marketing_report_master', 'deleted_time')) {
-            $this->markTestSkipped('Tabel kegiatan marketing versi web terbaru tidak ada.');
-        }
         $mkt = DB::table('acl_user')->whereIn('id_role', [11, 17])->whereIn('id_wilayah', DB::table('pro_master_area')->pluck('id_master'))->orderBy('id_user')->first();
         $cust = DB::table('pro_customer')->first();
+        $punyaUtama = Schema::hasColumn('pro_marketing_report_master', 'file_upload') && Schema::hasColumn('pro_marketing_report_master', 'file_ori');
+        $punyaTabel = Schema::hasTable('pro_marketing_report_master_file');
         $base = ['id_customer' => $cust->id_customer, 'pic_customer' => 'Bu Uji', 'tanggal' => '2024-03-10 00:00:00', 'create_by' => $mkt->id_user, 'create_date' => '2024-03-10 08:00:00'];
         $id1 = DB::table('pro_marketing_report_master')->insertGetId($base + ['kegiatan' => 'Sales call uji', 'hasil_kegiatan' => '<p>Hasil <b>uji</b></p>', 'status' => null]);
         $id2 = DB::table('pro_marketing_report_master')->insertGetId($base + ['kegiatan' => 'Follow up uji', 'hasil_kegiatan' => 'x', 'status' => 1]);
-        $id3 = DB::table('pro_marketing_report_master')->insertGetId($base + ['kegiatan' => 'Presentasi uji', 'hasil_kegiatan' => 'y', 'status' => 2, 'file_upload' => 'uji-utama.pdf', 'file_ori' => 'Utama.pdf']);
+        $id3 = DB::table('pro_marketing_report_master')->insertGetId($base + ['kegiatan' => 'Presentasi uji', 'hasil_kegiatan' => 'y', 'status' => 2] + ($punyaUtama ? ['file_upload' => 'uji-utama.pdf', 'file_ori' => 'Utama.pdf'] : []));
         DB::table('pro_marketing_report_master_disposisi')->insert(['id_disposisi' => 2, 'id_mkt_report' => $id3, 'disposisi' => 2, 'catatan' => 'ok', 'tanggal' => '2024-03-11 09:00:00', 'result' => 1, 'pic' => 'BM Uji']);
-        DB::table('pro_marketing_report_master_file')->insert(['id_mkt_report' => $id3, 'keterangan' => 'Foto kunjungan', 'file_upload' => 'uji-foto.jpg', 'file_ori' => 'Foto.jpg']);
+        if ($punyaTabel) {
+            DB::table('pro_marketing_report_master_file')->insert(['id_mkt_report' => $id3, 'keterangan' => 'Foto kunjungan', 'file_upload' => 'uji-foto.jpg', 'file_ori' => 'Foto.jpg']);
+        }
 
-        return [$mkt, [$id1, $id2, $id3]];
+        return [$mkt, [$id1, $id2, $id3], ($punyaUtama ? 1 : 0) + ($punyaTabel ? 1 : 0)];
+    }
+
+    public function test_kegiatan_tanpa_kolom_deleted_time_tidak_error(): void
+    {
+        $this->om();
+        // Regresi: server menolak 'a.deleted_time' (kolom tidak ada). Tidak boleh 500 pada ringkasan maupun daftar.
+        $this->getJson('/api/v1/report/marketing/kegiatan?tahun=2024')->assertOk();
+        $this->getJson('/api/v1/report/marketing/kegiatan/list?tahun=2024')->assertOk();
     }
 
     public function test_kegiatan_ringkasan_dan_status(): void
@@ -165,6 +174,10 @@ class ReportMarketingTest extends TestCase
     public function test_kegiatan_dihapus_tidak_dihitung(): void
     {
         $this->om();
+        // Di server kolom deleted_time bukan milik tabel kegiatan; tes ini hanya relevan bila tabel kegiatan memilikinya.
+        if (! Schema::hasColumn('pro_marketing_report_master', 'deleted_time')) {
+            $this->markTestSkipped('pro_marketing_report_master tidak punya deleted_time (sama seperti server).');
+        }
         [, $ids] = $this->siapkanKegiatan();
         $awal = $this->getJson('/api/v1/report/marketing/kegiatan/list?tahun=2024&bulan=3&per_page=50')->json('meta.total');
         DB::table('pro_marketing_report_master')->where('id_mkt_report', $ids[0])->update(['deleted_time' => now()]);
@@ -184,21 +197,32 @@ class ReportMarketingTest extends TestCase
         $this->getJson('/api/v1/report/marketing/kegiatan/list?tahun=2024&q='.urlencode("' OR 1=1 --"))->assertOk()->assertJsonPath('meta.total', 0);
     }
 
-    public function test_kegiatan_detail_dan_berkas(): void
+    public function test_kegiatan_detail_tanpa_lampiran_tidak_error(): void
     {
         $this->om();
-        [, $ids] = $this->siapkanKegiatan();
+        [, $ids, $jumlahFile] = $this->siapkanKegiatan();
         $d = $this->getJson('/api/v1/report/marketing/kegiatan/'.$ids[2])->assertOk()->assertJsonPath('status', 'Approve BM');
-        $this->assertCount(2, $d->json('files'));
+        $this->assertCount($jumlahFile, $d->json('files'));
         $this->assertSame('BM', $d->json('tahap.0.tahap'));
+        // berkas yang tidak ada (kolom/tabel lampiran bisa tidak ada seperti di server) harus 404 rapi, bukan 500
+        $this->getJson('/api/v1/report/marketing/kegiatan/'.$ids[0].'/berkas/0')->assertNotFound();
+        $this->getJson('/api/v1/report/marketing/kegiatan/'.$ids[0].'/berkas/99999')->assertNotFound();
+    }
 
+    public function test_kegiatan_berkas_utama_dan_tambahan(): void
+    {
+        $this->om();
+        if (! Schema::hasColumn('pro_marketing_report_master', 'file_upload') || ! Schema::hasTable('pro_marketing_report_master_file')) {
+            $this->markTestSkipped('Skema lampiran kegiatan tidak ada (sama seperti server).');
+        }
+        [, $ids] = $this->siapkanKegiatan();
         $tmp = sys_get_temp_dir().'/orca-kegiatan-'.uniqid();
         mkdir($tmp.'/files/uploaded_user/lampiran', 0777, true);
         file_put_contents($tmp.'/files/uploaded_user/lampiran/uji-utama.pdf', '%PDF-1.4 uji');
         config(['orca.web_files' => $tmp]);
         $this->get('/api/v1/report/marketing/kegiatan/'.$ids[2].'/berkas/0')->assertOk()->assertHeader('Content-Type', 'application/pdf');
-        $this->getJson('/api/v1/report/marketing/kegiatan/'.$ids[2].'/berkas/'.DB::table('pro_marketing_report_master_file')->where('id_mkt_report', $ids[2])->value('id_file_upload'))->assertNotFound()->assertJsonPath('code', 'FILE_MISSING');
-        $this->getJson('/api/v1/report/marketing/kegiatan/'.$ids[0].'/berkas/0')->assertNotFound();
+        $fid = DB::table('pro_marketing_report_master_file')->where('id_mkt_report', $ids[2])->value('id_file_upload');
+        $this->getJson('/api/v1/report/marketing/kegiatan/'.$ids[2].'/berkas/'.$fid)->assertNotFound()->assertJsonPath('code', 'FILE_MISSING');
         @unlink($tmp.'/files/uploaded_user/lampiran/uji-utama.pdf');
     }
 }

@@ -34,33 +34,46 @@ const selM = ref(-1) // bulan yang diketuk pada grafik (0-11)
 const cabangs = ref([])
 const data = reactive({ volume: null, aktif: null, baru: null, kegiatan: null })
 const loading = reactive({ volume: false, aktif: false, baru: false, kegiatan: false })
-const error = ref('')
+const errs = reactive({ volume: '', aktif: '', baru: '', kegiatan: '' }) // kegagalan per data; satu yang gagal tidak menutup yang lain
 let seq = 0
 
 const need = computed(() => (tab.value === 'sum' ? JENIS : [tab.value]))
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
+/** Muat satu data; gangguan sementara server (5xx / jaringan) dicoba ulang sekali otomatis. */
 async function fetchJenis(j, my) {
   loading[j] = true
+  errs[j] = ''
   try {
-    const r = await syop.reportMarketing(j, { tahun: tahun.value, cabang: cabang.value || undefined })
-    if (my === seq) data[j] = r
-  } catch (e) {
-    if (my === seq) error.value = errorMessage(e)
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const r = await syop.reportMarketing(j, { tahun: tahun.value, cabang: cabang.value || undefined })
+        if (my === seq) data[j] = r
+        return
+      } catch (e) {
+        const st = e.response?.status
+        if (attempt === 0 && (!st || st >= 500) && st !== 403) { await sleep(1500); if (my !== seq) return; continue }
+        if (my === seq) errs[j] = errorMessage(e)
+        return
+      }
+    }
   } finally {
     if (my === seq) loading[j] = false
   }
 }
 function reload() {
   const my = ++seq
-  error.value = ''
   selM.value = -1
-  JENIS.forEach((j) => { data[j] = null; loading[j] = false })
+  JENIS.forEach((j) => { data[j] = null; loading[j] = false; errs[j] = '' })
   need.value.forEach((j) => fetchJenis(j, my))
 }
+/** Coba ulang hanya data yang gagal. */
+function retry() { need.value.filter((j) => errs[j]).forEach((j) => fetchJenis(j, seq)) }
+const failed = computed(() => need.value.filter((j) => errs[j]))
 watch([tahun, cabang], reload)
 watch(tab, () => {
   selM.value = -1
-  need.value.forEach((j) => { if (!data[j] && !loading[j]) fetchJenis(j, seq) })
+  need.value.forEach((j) => { if (!data[j] && !loading[j] && !errs[j]) fetchJenis(j, seq) })
 })
 onMounted(() => {
   syop.reportCabang().then((r) => (cabangs.value = r)).catch(() => {})
@@ -100,6 +113,10 @@ const mktOptions = computed(() => {
   return [...m].map(([id, nama]) => ({ id, nama })).sort((a, b) => a.nama.localeCompare(b.nama))
 })
 const mktName = computed(() => mktOptions.value.find((x) => x.id === mkt.value)?.nama || '')
+const sumEmpty = computed(() => {
+  const got = JENIS.map((j) => V.value[j]).filter(Boolean)
+  return !failed.value.length && !loadingAny.value && got.length > 0 && got.every((v) => v.empty)
+})
 const loadingAny = computed(() => need.value.some((j) => loading[j]))
 
 const fmt = (j, v) => (j === 'volume' ? ringkas(v) + ' L' : angka(v))
@@ -267,16 +284,21 @@ const tabs = [['sum', 'rm.tab.sum'], ['volume', 'rm.tab.vol'], ['aktif', 'rm.t.a
         <Icon name="user" :size="16" /> {{ t('rm.filtered', { name: mktName }) }} <Icon name="x" :size="16" />
       </button>
 
-      <StateBox v-if="error" icon="alert" :title="t('common.failedLoad')" :text="error" :action="t('common.retry')" @action="reload" />
-      <div v-else-if="loadingAny && need.some((j) => !data[j])" class="stack">
+      <StateBox v-if="tab !== 'sum' && errs[tab]" icon="alert" :title="t('common.failedLoad')" :text="errs[tab]" :action="t('common.retry')" @action="retry" />
+      <div v-else-if="loadingAny && need.every((j) => !data[j])" class="stack">
         <div class="skel" style="height:96px" /><div class="skel" style="height:210px" /><div class="skel" style="height:160px" />
       </div>
 
       <!-- ===== RINGKASAN ===== -->
-      <template v-else-if="tab === 'sum' && V.volume">
-        <StateBox v-if="V.volume.empty && V.aktif?.empty && V.baru?.empty" icon="chart" :title="t('rm.none')" :text="t('rm.noneText')" />
+      <template v-else-if="tab === 'sum' && (V.volume || V.aktif || V.baru || V.kegiatan || failed.length)">
+        <div v-for="j in failed" :key="'e' + j" class="card errc">
+          <span><b>{{ t(META[j].title) }}</b><br>{{ errs[j] }}</span>
+          <button class="btn btn-ghost" @click="retry">{{ t('common.retry') }}</button>
+        </div>
+        <StateBox v-if="sumEmpty" icon="chart" :title="t('rm.none')" :text="t('rm.noneText')" />
         <template v-else>
           <div class="cards3">
+            <div v-for="j in JENIS.filter((x) => loading[x] && !data[x])" :key="'l' + j" class="skel" style="height:132px" />
             <button v-for="(c, i) in sumCards" :key="c.j" class="card sc rise" :style="{ '--i': i, '--c': c.color }" @click="tab = c.j">
               <span class="sc-h"><i class="dotc" /> {{ t(META[c.j].title) }}</span>
               <span class="sc-v">{{ c.big }}<small v-if="c.unit"> {{ c.unit }}</small></span>
@@ -285,17 +307,17 @@ const tabs = [['sum', 'rm.tab.sum'], ['volume', 'rm.tab.vol'], ['aktif', 'rm.t.a
             </button>
           </div>
 
-          <div class="card box rise" style="--i:3">
+          <div v-if="V.volume && V.aktif" class="card box rise" style="--i:3">
             <div class="ttl"><h3>{{ t('rm.sum.perCust') }}</h3></div>
             <div class="pc"><b>{{ perCust === null ? '–' : angka(perCust) }}<small> {{ t('rm.d.liter') }}</small></b><span>{{ t('rm.sum.perCustSub') }}</span></div>
           </div>
 
-          <div class="card box rise" style="--i:4">
+          <div v-if="V.volume" class="card box rise" style="--i:4">
             <div class="ttl"><h3>{{ t('rm.share') }}</h3><span class="tag" style="--c:#0a66e8">{{ t('rm.tab.vol') }}</span></div>
             <Donut :items="donutItems('volume')" :center="ringkas(V.volume.d.total)" caption="liter" />
           </div>
 
-          <div class="card box rise" style="--i:5">
+          <div v-if="V.volume" class="card box rise" style="--i:5">
             <div class="ttl"><h3>{{ t('rm.sum.leader') }}</h3></div>
             <p class="hint">{{ t('rm.sum.leaderSub') }}</p>
             <div class="lh"><span /><span>{{ t('rm.sum.col.vol') }}</span><span>{{ t('rm.sum.col.act') }}</span><span>{{ t('rm.sum.col.new') }}</span></div>
@@ -517,6 +539,8 @@ h3 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04
 /* kartu ringkasan */
 .cards3 { display: grid; gap: 12px; }
 .sc { font: inherit; color: inherit; text-align: left; display: grid; gap: 4px; padding: 14px 16px 10px; border-color: color-mix(in srgb, var(--c) 30%, var(--line)); overflow: hidden; position: relative; }
+.errc { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 14px; border-color: var(--red); font-size: 13px; }
+.errc .btn { flex: none; min-height: 40px; padding: 0 14px; }
 .sc-h { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--muted); }
 .dotc { width: 10px; height: 10px; border-radius: 3px; background: var(--c); }
 .sc-v { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); }
