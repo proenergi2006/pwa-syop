@@ -28,7 +28,8 @@ const grpLoading = ref(false)
 const items = ref([])
 const meta = ref({ page: 1, last: 1, total: 0 })
 const q = ref(String(route.query.q || ''))
-const sort = ref(route.query.sort === 'asc' ? 'asc' : 'desc') // 'asc' = terlama dulu: yang paling lama menunggu diproses lebih dulu
+// 'asc' = terlama dulu. OM (peran 6) default terlama dulu; peran lain terbaru dulu. Bisa diubah lewat chip.
+const sort = ref(route.query.sort === 'asc' || (route.query.sort !== 'desc' && auth.user?.id_role === 6) ? 'asc' : 'desc')
 const loading = ref(true)
 const more = ref(false)
 const error = ref('')
