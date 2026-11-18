@@ -12,6 +12,7 @@ import { errorMessage } from '../api/client'
 import { showToast } from '../composables/useToast'
 import { usePush } from '../composables/usePush'
 import { tanggal } from '../utils/format'
+import { update, reloadApp, checkUpdate } from '../composables/useUpdate'
 
 const FaceScan = defineAsyncComponent(() => import('../components/FaceScan.vue'))
 
@@ -21,6 +22,13 @@ const auth = useAuth()
 const inbox = useInbox()
 const info = ref(false)
 const busy = ref(false)
+const checking = ref(false)
+async function cekPembaruan() {
+  checking.value = true
+  const ada = await checkUpdate()
+  checking.value = false
+  if (!ada) showToast(t('prof.upToDate'))
+}
 
 // --- Foto profil ---
 const fileEl = ref(null)
@@ -229,6 +237,17 @@ async function logout() {
         <div class="seg" role="radiogroup" :aria-label="t('prof.language')">
           <button role="radio" :aria-checked="lang === 'id'" class="seg-b" :class="{ on: lang === 'id' }" @click="setLang('id'); push.resync()">Bahasa Indonesia</button>
           <button role="radio" :aria-checked="lang === 'en'" class="seg-b" :class="{ on: lang === 'en' }" @click="setLang('en'); push.resync()">English</button>
+        </div>
+      </section>
+
+      <section class="card face rise" style="--i: 3">
+        <div class="face-row">
+          <span class="ico-box tinted" :class="update.ready ? 'tone-rose' : 'tone-blue'"><Icon name="refresh" :size="20" /></span>
+          <div class="grow"><b>{{ update.ready ? t('upd.title') : t('prof.updateTitle') }}</b><p>{{ update.ready ? t('upd.text') : t('prof.updateText') }}</p></div>
+        </div>
+        <div class="face-act">
+          <button v-if="update.ready" class="btn btn-primary" @click="reloadApp">{{ t('prof.updateNow') }}</button>
+          <button v-else class="btn btn-ghost" :disabled="checking" @click="cekPembaruan">{{ checking ? t('prof.checking') : t('prof.checkUpdate') }}</button>
         </div>
       </section>
 

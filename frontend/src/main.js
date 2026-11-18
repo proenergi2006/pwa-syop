@@ -8,7 +8,7 @@ import { useAuth } from './stores/auth'
 import { useInbox } from './stores/inbox'
 import { showToast } from './composables/useToast'
 import { initTheme } from './composables/useTheme'
-import { markUpdateReady } from './composables/useUpdate'
+import { markUpdateReady, setRegistration } from './composables/useUpdate'
 import { t } from './i18n'
 import './style.css'
 
@@ -41,6 +41,7 @@ const updateSW = registerSW({
   onNeedRefresh() { markUpdateReady(updateSW) },
   onRegisteredSW(_url, reg) {
     if (!reg) return
+    setRegistration(reg)
     const check = () => reg.update().catch(() => {})
     document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && check())
     setInterval(check, 30 * 60 * 1000)
