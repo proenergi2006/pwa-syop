@@ -23,3 +23,16 @@ export async function checkUpdate() {
   for (let i = 0; i < 12 && !update.ready; i++) await new Promise((r) => setTimeout(r, 500))
   return update.ready
 }
+
+/** "Nanti": sembunyikan pita sebentar saja. Muncul lagi 3 menit kemudian atau saat aplikasi dibuka kembali, sampai benar-benar dimuat ulang. */
+let snoozeTimer = null
+export function snooze() {
+  update.dismissed = true
+  clearTimeout(snoozeTimer)
+  snoozeTimer = setTimeout(() => { update.dismissed = false }, 3 * 60 * 1000)
+}
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && update.ready) update.dismissed = false
+  })
+}

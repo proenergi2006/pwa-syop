@@ -5,7 +5,7 @@ import BottomNav from './components/BottomNav.vue'
 import { toast } from './composables/useToast'
 import { navDir } from './composables/useNav'
 import { useInbox } from './stores/inbox'
-import { update, reloadApp } from './composables/useUpdate'
+import { update, reloadApp, snooze } from './composables/useUpdate'
 import { t } from './i18n'
 import { tokenStore } from './api/client'
 import { useAuth } from './stores/auth'
@@ -57,7 +57,7 @@ onBeforeUnmount(() => { clearInterval(badgeTimer); document.removeEventListener(
         <span class="upd-i" aria-hidden="true">↻</span>
         <span class="upd-t"><b>{{ t('upd.title') }}</b><small>{{ t('upd.text') }}</small></span>
         <button class="upd-b" @click="reloadApp">{{ t('upd.reload') }}</button>
-        <button class="upd-x" :aria-label="t('upd.later')" @click="update.dismissed = true">×</button>
+        <button class="upd-x" :aria-label="t('upd.later')" @click="snooze">×</button>
       </div>
     </Transition>
     <div v-if="toast.msg" class="toast" :class="toast.kind" role="status" aria-live="polite">{{ toast.msg }}</div>
