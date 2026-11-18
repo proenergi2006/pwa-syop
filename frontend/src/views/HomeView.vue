@@ -44,7 +44,7 @@ const notifs = ref([])
 const logoutOpen = ref(false)
 
 // Menu utama (bulat): yang sudah bisa dipakai membuka halamannya, sisanya memberi tahu "segera hadir".
-const limitedMods = computed(() => Array.isArray(auth.user?.modules) && auth.user.modules.every((x) => ['penawaran', 'stok_terminal', 'reservasi', 'mobil', 'inventory', 'dr', 'trucking_dr', 'master', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc'].includes(x)))
+const limitedMods = computed(() => Array.isArray(auth.user?.modules) && auth.user.modules.every((x) => ['penawaran', 'stok_terminal', 'reservasi', 'mobil', 'inventory', 'dr', 'trucking_dr', 'master', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'report'].includes(x)))
 const has = (m) => !m || !Array.isArray(auth.user?.modules) || auth.user.modules.includes(m)
 const canPenawaran = computed(() => has('penawaran'))
 const canApprove = computed(() => ['penawaran', 'po', 'shipping', 'trucking', 'dr', 'trucking_dr', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc'].some((m) => has(m)))
@@ -65,6 +65,7 @@ const quick = [
   { key: 'sc', label: 'sc.title', icon: 'invoice', to: 'sc', c: '#0f8b8d', mod: 'sc' },
   { key: 'permohonan', label: 'pm.title', icon: 'doc', to: 'permohonan', c: '#4f46e5', mod: 'permohonan' },
   { key: 'lcr', label: 'lcr.title', icon: 'box', to: 'lcr', c: '#0f8b8d', mod: 'lcr' },
+  { key: 'report', label: 'report.title', icon: 'chart', to: 'report', c: '#0b7a4b', mod: 'report' },
   { key: 'refund', label: 'home.m.refund', icon: 'refund', to: 'refund-penerima', c: 'var(--accent)', mod: 'refund' },
   { key: 'shipping', label: 'home.m.shipping', icon: 'ship', to: 'shipping', c: 'var(--accent)', mod: 'shipping' },
   { key: 'trucking', label: 'home.m.trucking', icon: 'truck', to: 'trucking', c: '#e07400', mod: 'trucking' },

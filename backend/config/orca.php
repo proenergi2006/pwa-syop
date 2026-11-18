@@ -42,6 +42,7 @@ return [
         'verifikasi_customer' => [7, 6], // Verifikasi Data Customer: BM dan OM
         'trucking' => [21], // Trucking Instruction: persetujuan CEO
         'shipping' => [21], // Shipping Instruction: persetujuan akhir CEO
+        'report' => [6], // Report (Report Marketing: volume, customer aktif, customer baru): hanya OM
         'mobil' => ['*'], // Peminjaman mobil: semua peran, mobil sesuai cabang pengguna
         'reservasi' => ['*'], // Reservasi ruangan: semua peran, ruangan sesuai cabang pengguna
         'stok_terminal' => [21, 6, 7, 5], // grafik tangki di Beranda: CEO (dengan COGS), OM dan Purchasing semua cabang, BM cabangnya saja; COGS hanya CEO dan Purchasing

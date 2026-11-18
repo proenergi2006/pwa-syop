@@ -32,6 +32,7 @@ const modules = [
   { key: 'permohonan', label: 'pm.title', icon: 'doc', to: 'permohonan', tone: 'indigo', mod: 'permohonan' },
   { key: 'lcr', label: 'lcr.title', icon: 'box', to: 'lcr', tone: 'teal', mod: 'lcr' },
   { key: 'refund', label: 'home.m.refund', icon: 'refund', to: 'refund-penerima', tone: 'green', mod: 'refund' },
+  { key: 'report', label: 'report.title', icon: 'chart', to: 'report', tone: 'green', mod: 'report' },
   { key: 'verifikasi_customer', label: 'vc.title', icon: 'doc', to: 'verifikasi-customer', tone: 'blue', mod: 'verifikasi_customer' },
   { key: 'fuel', label: 'mod.fuel', icon: 'drop', tone: 'teal' },
   { key: 'po', label: 'mod.po', icon: 'cart', to: 'po', tone: 'violet', mod: 'po' },
@@ -51,7 +52,7 @@ const has = (m) => !m || !Array.isArray(auth.user?.modules) || auth.user.modules
 // OM/BM (hanya modul penawaran): menu lain, termasuk yang "segera hadir", disembunyikan.
 const limited = computed(() => {
   const mods = auth.user?.modules
-  return Array.isArray(mods) && mods.every((x) => ['penawaran', 'stok_terminal', 'reservasi', 'mobil', 'inventory', 'dr', 'trucking_dr', 'master', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc'].includes(x))
+  return Array.isArray(mods) && mods.every((x) => ['penawaran', 'stok_terminal', 'reservasi', 'mobil', 'inventory', 'dr', 'trucking_dr', 'master', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'report'].includes(x))
 })
 const all = computed(() => [...modules, ...tools].filter((m) => (m.mod ? has(m.mod) : m.key === 'riwayat' ? has('penawaran') : !limited.value)))
 // Hanya yang sudah bisa dipakai tampil sebagai kartu; sisanya diringkas sebagai daftar "Segera hadir".

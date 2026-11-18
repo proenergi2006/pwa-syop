@@ -18,6 +18,7 @@ use App\Http\Controllers\PoController;
 use App\Http\Controllers\LcrController;
 use App\Http\Controllers\PermohonanController;
 use App\Http\Controllers\ProdukController;
+use App\Http\Controllers\ReportMarketingController;
 use App\Http\Controllers\RefundPenerimaController;
 use App\Http\Controllers\ReservasiController;
 use App\Http\Controllers\SalesConfirmationController;
@@ -140,6 +141,20 @@ Route::prefix('v1')->group(function () {
         Route::post('{id}/verifikasi', [TruckingDrController::class, 'verify'])->whereNumber('id')->middleware('throttle:30,1');
         Route::post('{id}/revisi', [TruckingDrController::class, 'revise'])->whereNumber('id')->middleware('throttle:30,1');
         Route::post('{id}/kembali-dp', [TruckingDrController::class, 'returnToDp'])->whereNumber('id')->middleware('throttle:10,1');
+    });
+
+    Route::middleware(['auth:sanctum', ModuleAccess::class.':report'])->prefix('report/marketing')->group(function () {
+        Route::get('cabang', [ReportMarketingController::class, 'cabangList']);
+        Route::get('volume', [ReportMarketingController::class, 'volume']);
+        Route::get('volume/detail', [ReportMarketingController::class, 'volumeDetail']);
+        Route::get('aktif', [ReportMarketingController::class, 'aktif']);
+        Route::get('aktif/detail', [ReportMarketingController::class, 'aktifDetail']);
+        Route::get('baru', [ReportMarketingController::class, 'baru']);
+        Route::get('baru/detail', [ReportMarketingController::class, 'baruDetail']);
+        Route::get('kegiatan', [ReportMarketingController::class, 'kegiatan']);
+        Route::get('kegiatan/list', [ReportMarketingController::class, 'kegiatanList']);
+        Route::get('kegiatan/{id}', [ReportMarketingController::class, 'kegiatanShow'])->whereNumber('id');
+        Route::get('kegiatan/{id}/berkas/{fid}', [ReportMarketingController::class, 'kegiatanBerkas'])->whereNumber('id')->whereNumber('fid');
     });
 
     Route::middleware(['auth:sanctum', ModuleAccess::class.':sc'])->prefix('sales-confirmation')->group(function () {
