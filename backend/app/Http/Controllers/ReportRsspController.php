@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 /**
- * Report RSSP Fuel untuk CEO (peran 21). Hanya baca.
+ * Report RSSP Fuel untuk OM (peran 6) dan CEO (peran 21). Hanya baca.
  * Sumber: rssp-fuel.php (filter), rssp-fuel-loaded.php (rumus matriks harian), __get_rssp_detail.php (rincian sel).
  * Input forecast supply / forecast sales planning milik Procurement (peran 5), tidak ada di sini.
  *

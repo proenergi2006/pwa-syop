@@ -43,9 +43,9 @@ class ReportRsspTest extends TestCase
         return $x;
     }
 
-    public function test_hanya_ceo_yang_boleh(): void
+    public function test_hanya_om_dan_ceo_yang_boleh(): void
     {
-        foreach ([6, 7, 5, 11] as $role) {
+        foreach ([7, 5, 11] as $role) {
             $u = AclUser::where('id_role', $role)->where('is_active', 1)->first();
             if (! $u) {
                 continue;
@@ -56,6 +56,11 @@ class ReportRsspTest extends TestCase
         }
         $this->ceo();
         $this->getJson('/api/v1/report/rssp/cabang')->assertOk()->assertJsonStructure(['data' => [['id', 'nama']]]);
+        // OM juga boleh, dengan data yang sama
+        Sanctum::actingAs(AclUser::where('id_role', 6)->where('is_active', 1)->firstOrFail(), ['*']);
+        $this->getJson('/api/v1/report/rssp/cabang')->assertOk();
+        $this->getJson('/api/v1/report/rssp?cabang=nasional&bulan=10&tahun=2025')->assertOk()->assertJsonStructure(['depots', 'total_sales']);
+        $this->getJson('/api/v1/report/rssp/detail?type=forecast&tanggal=2025-10-01')->assertOk();
     }
 
     public function test_matriks_bulanan_dan_sales_sama_dengan_database(): void

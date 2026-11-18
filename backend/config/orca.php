@@ -43,7 +43,7 @@ return [
         'trucking' => [21], // Trucking Instruction: persetujuan CEO
         'shipping' => [21], // Shipping Instruction: persetujuan akhir CEO
         'report' => [6, 21], // Menu Report + Report Marketing (volume, customer aktif, customer baru, kegiatan): OM dan CEO
-        'rssp' => [21], // Report RSSP Fuel (stok, supply, sales harian): CEO
+        'rssp' => [6, 21], // Report RSSP Fuel (stok, supply, sales harian): OM dan CEO
         'mobil' => ['*'], // Peminjaman mobil: semua peran, mobil sesuai cabang pengguna
         'reservasi' => ['*'], // Reservasi ruangan: semua peran, ruangan sesuai cabang pengguna
         'stok_terminal' => [21, 6, 7, 5], // grafik tangki di Beranda: CEO (dengan COGS), OM dan Purchasing semua cabang, BM cabangnya saja; COGS hanya CEO dan Purchasing

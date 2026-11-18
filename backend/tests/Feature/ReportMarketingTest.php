@@ -61,7 +61,7 @@ class ReportMarketingTest extends TestCase
     {
         $this->om();
         $this->assertContains('report', $this->getJson('/api/v1/auth/me')->json('user.modules'));
-        $this->assertNotContains('rssp', $this->getJson('/api/v1/auth/me')->json('user.modules')); // RSSP hanya CEO
+        $this->assertContains('rssp', $this->getJson('/api/v1/auth/me')->json('user.modules')); // RSSP: OM dan CEO
         Sanctum::actingAs(AclUser::where('id_role', 21)->where('is_active', 1)->firstOrFail(), ['*']);
         $modul = $this->getJson('/api/v1/auth/me')->json('user.modules');
         $this->assertContains('report', $modul);
