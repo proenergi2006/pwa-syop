@@ -24,6 +24,7 @@ const router = createRouter({
     { path: '/produk/:id(\\d+)', name: 'produk-detail', component: () => import('../views/ProdukDetailView.vue'), props: true, meta: { module: 'produk' } },
     { path: '/dr', name: 'dr', component: () => import('../views/DrView.vue'), meta: { nav: true, module: 'dr' } },
     { path: '/report', name: 'report', component: () => import('../views/ReportView.vue'), meta: { nav: true, module: 'report' } },
+    { path: '/report/rssp', name: 'report-rssp', component: () => import('../views/ReportRsspView.vue'), meta: { module: 'rssp' } },
     { path: '/report/marketing', name: 'report-marketing', component: () => import('../views/ReportMarketingView.vue'), meta: { module: 'report' } },
     { path: '/sales-confirmation', name: 'sc', component: () => import('../views/SalesConfirmationView.vue'), meta: { nav: true, module: 'sc' } },
     { path: '/sales-confirmation/:id(\\d+)', name: 'sc-detail', component: () => import('../views/SalesConfirmationDetailView.vue'), meta: { module: 'sc' } },

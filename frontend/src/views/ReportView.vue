@@ -4,13 +4,19 @@ import { useScrolled } from '../composables/useScrolled'
 import { useRouter } from 'vue-router'
 import Icon from '../components/Icon.vue'
 import UserAvatar from '../components/UserAvatar.vue'
+import { computed } from 'vue'
+import { useAuth } from '../stores/auth'
 
 const scrolled = useScrolled()
 const router = useRouter()
+const auth = useAuth()
 // Daftar report. Tambahkan report baru di sini; saat ini baru Report Marketing.
-const reports = [
-  { key: 'marketing', to: 'report-marketing', icon: 'chart', title: 'report.marketing', sub: 'report.marketingSub', tags: ['rm.tab.vol', 'rm.tab.act', 'rm.tab.new', 'rm.tab.keg'], c: '#0a66e8' },
+const all = [
+  { key: 'marketing', to: 'report-marketing', icon: 'chart', title: 'report.marketing', sub: 'report.marketingSub', tags: ['rm.tab.vol', 'rm.tab.act', 'rm.tab.new', 'rm.tab.keg'], c: '#0a66e8', mod: 'report', art: 'bars' },
+  { key: 'rssp', to: 'report-rssp', icon: 'drop', title: 'report.rssp', sub: 'report.rsspSub', tags: ['rs.tag.stock', 'rs.tag.supply', 'rs.tag.sales', 'rs.tag.forecast'], c: '#0f8b8d', mod: 'rssp', art: 'tank' },
 ]
+// Hanya report yang boleh dibuka peran ini (OM: Marketing; CEO: Marketing dan RSSP).
+const reports = computed(() => all.filter((r) => !Array.isArray(auth.user?.modules) || auth.user.modules.includes(r.mod)))
 </script>
 
 <template>
@@ -26,11 +32,21 @@ const reports = [
     <div class="stack">
       <button v-for="(r, i) in reports" :key="r.key" class="card rep rise" :style="{ '--i': i, '--c': r.c }" @click="router.push({ name: r.to })">
         <span class="art" aria-hidden="true">
-          <svg viewBox="0 0 120 64" preserveAspectRatio="none">
-            <defs><linearGradient id="rg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".35" /><stop offset="1" stop-color="#fff" stop-opacity="0" /></linearGradient></defs>
-            <path d="M0 48 C14 40 22 54 36 42 S58 20 72 30 98 12 120 8 L120 64 L0 64Z" fill="url(#rg)" />
+          <svg v-if="r.art === 'bars'" viewBox="0 0 120 64" preserveAspectRatio="none">
+            <defs><linearGradient :id="'rg' + r.key" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".35" /><stop offset="1" stop-color="#fff" stop-opacity="0" /></linearGradient></defs>
+            <path d="M0 48 C14 40 22 54 36 42 S58 20 72 30 98 12 120 8 L120 64 L0 64Z" :fill="`url(#rg${r.key})`" />
             <path d="M0 48 C14 40 22 54 36 42 S58 20 72 30 98 12 120 8" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" />
             <g fill="#fff" opacity=".9"><rect x="14" y="40" width="7" height="18" rx="2" /><rect x="30" y="30" width="7" height="28" rx="2" /><rect x="46" y="36" width="7" height="22" rx="2" /><rect x="62" y="22" width="7" height="36" rx="2" /><rect x="78" y="28" width="7" height="30" rx="2" /><rect x="94" y="14" width="7" height="44" rx="2" /></g>
+          </svg>
+          <svg v-else viewBox="0 0 120 64" preserveAspectRatio="xMidYMid slice">
+            <g fill="none" stroke="#fff" stroke-width="2" opacity=".9">
+              <rect x="10" y="14" width="30" height="40" rx="6" /><rect x="46" y="8" width="30" height="46" rx="6" /><rect x="82" y="18" width="28" height="36" rx="6" />
+            </g>
+            <g fill="#fff" opacity=".75">
+              <path d="M10 38 q7.5 -5 15 0 t15 0 V48 a6 6 0 0 1 -6 6 H16 a6 6 0 0 1 -6 -6Z" />
+              <path d="M46 26 q7.5 -5 15 0 t15 0 V48 a6 6 0 0 1 -6 6 H52 a6 6 0 0 1 -6 -6Z" />
+              <path d="M82 40 q7 -5 14 0 t14 0 V48 a6 6 0 0 1 -6 6 H88 a6 6 0 0 1 -6 -6Z" />
+            </g>
           </svg>
         </span>
         <span class="info">

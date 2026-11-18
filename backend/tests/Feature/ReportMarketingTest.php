@@ -38,7 +38,7 @@ class ReportMarketingTest extends TestCase
 
     public function test_hanya_om_yang_boleh(): void
     {
-        foreach ([7, 21, 5, 11] as $role) {
+        foreach ([7, 5, 11] as $role) {
             $u = AclUser::where('id_role', $role)->where('is_active', 1)->first();
             if (! $u) {
                 continue;
@@ -51,13 +51,22 @@ class ReportMarketingTest extends TestCase
         }
         $this->om();
         $this->getJson('/api/v1/report/marketing/cabang')->assertOk()->assertJsonStructure(['data' => [['id', 'nama']]]);
+        // CEO memakai Report Marketing yang sama dengan OM
+        Sanctum::actingAs(AclUser::where('id_role', 21)->where('is_active', 1)->firstOrFail(), ['*']);
+        $this->getJson('/api/v1/report/marketing/cabang')->assertOk();
+        $this->getJson('/api/v1/report/marketing/volume?tahun='.$this->tahunAda())->assertOk()->assertJsonStructure(['rows', 'totals']);
     }
 
     public function test_menu_report_hanya_di_modul_om(): void
     {
         $this->om();
         $this->assertContains('report', $this->getJson('/api/v1/auth/me')->json('user.modules'));
-        foreach ([7, 21, 5] as $role) {
+        $this->assertNotContains('rssp', $this->getJson('/api/v1/auth/me')->json('user.modules')); // RSSP hanya CEO
+        Sanctum::actingAs(AclUser::where('id_role', 21)->where('is_active', 1)->firstOrFail(), ['*']);
+        $modul = $this->getJson('/api/v1/auth/me')->json('user.modules');
+        $this->assertContains('report', $modul);
+        $this->assertContains('rssp', $modul);
+        foreach ([7, 5] as $role) {
             Sanctum::actingAs(AclUser::where('id_role', $role)->where('is_active', 1)->firstOrFail(), ['*']);
             $this->assertNotContains('report', $this->getJson('/api/v1/auth/me')->json('user.modules'));
         }

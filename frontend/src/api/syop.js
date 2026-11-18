@@ -123,3 +123,6 @@ export const reportMarketing = (jenis, params = {}) => api.get(`/report/marketin
 export const reportMarketingDetail = (jenis, params = {}) => api.get(`/report/marketing/${jenis}/detail`, { params }).then((r) => r.data)
 export const reportKegiatanList = (params = {}) => api.get('/report/marketing/kegiatan/list', { params }).then((r) => r.data)
 export const reportKegiatanShow = (id) => api.get(`/report/marketing/kegiatan/${id}`).then((r) => r.data)
+export const reportRsspCabang = () => api.get('/report/rssp/cabang').then((r) => r.data.data)
+export const reportRssp = (params = {}) => api.get('/report/rssp', { params }).then((r) => r.data)
+export const reportRsspDetail = (params = {}) => api.get('/report/rssp/detail', { params }).then((r) => r.data)

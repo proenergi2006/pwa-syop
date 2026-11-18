@@ -13,8 +13,8 @@ const route = useRoute()
 const auth = useAuth()
 const pen = computed(() => !Array.isArray(auth.user?.modules) || auth.user.modules.includes('penawaran'))
 const ORDER = computed(() => pen.value
-  ? { home: 0, menu: 1, report: 1, approval: 2, 'approval-detail': 2, riwayat: 3, profil: 4, shipping: 0, 'shipping-detail': 0, trucking: 0, 'trucking-detail': 0, dr: 0, 'dr-detail': 0, 'trucking-dr': 0, 'master-terminal': 0, 'master-terminal-form': 0, 'master-vendor': 0, 'master-vendor-form': 0, 'trucking-dr': 0, 'trucking-dr-detail': 0, po: 0, 'po-detail': 0, harga: 0, 'harga-detail': 0, 'harga-form': 0, produk: 0, 'produk-detail': 0, 'produk-form': 0 }
-  : { home: 0, menu: 1, report: 1, inventory: 1, profil: 2, shipping: 0, 'shipping-detail': 0, trucking: 0, 'trucking-detail': 0, dr: 0, 'dr-detail': 0, 'trucking-dr': 0, 'master-terminal': 0, 'master-terminal-form': 0, 'master-vendor': 0, 'master-vendor-form': 0, 'trucking-dr': 0, 'trucking-dr-detail': 0, po: 0, 'po-detail': 0, harga: 0, 'harga-detail': 0, 'harga-form': 0, produk: 0, 'produk-detail': 0, 'produk-form': 0 })
+  ? { home: 0, menu: 1, report: 1, 'report-marketing': 1, 'report-rssp': 1, approval: 2, 'approval-detail': 2, riwayat: 3, profil: 4, shipping: 0, 'shipping-detail': 0, trucking: 0, 'trucking-detail': 0, dr: 0, 'dr-detail': 0, 'trucking-dr': 0, 'master-terminal': 0, 'master-terminal-form': 0, 'master-vendor': 0, 'master-vendor-form': 0, 'trucking-dr': 0, 'trucking-dr-detail': 0, po: 0, 'po-detail': 0, harga: 0, 'harga-detail': 0, 'harga-form': 0, produk: 0, 'produk-detail': 0, 'produk-form': 0 }
+  : { home: 0, menu: 1, report: 1, 'report-marketing': 1, 'report-rssp': 1, inventory: 1, profil: 2, shipping: 0, 'shipping-detail': 0, trucking: 0, 'trucking-detail': 0, dr: 0, 'dr-detail': 0, 'trucking-dr': 0, 'master-terminal': 0, 'master-terminal-form': 0, 'master-vendor': 0, 'master-vendor-form': 0, 'trucking-dr': 0, 'trucking-dr-detail': 0, po: 0, 'po-detail': 0, harga: 0, 'harga-detail': 0, 'harga-form': 0, produk: 0, 'produk-detail': 0, 'produk-form': 0 })
 const idx = computed(() => ORDER.value[route.name] ?? 0)
 </script>
 

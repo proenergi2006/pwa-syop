@@ -19,6 +19,7 @@ use App\Http\Controllers\LcrController;
 use App\Http\Controllers\PermohonanController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\ReportMarketingController;
+use App\Http\Controllers\ReportRsspController;
 use App\Http\Controllers\RefundPenerimaController;
 use App\Http\Controllers\ReservasiController;
 use App\Http\Controllers\SalesConfirmationController;
@@ -155,6 +156,12 @@ Route::prefix('v1')->group(function () {
         Route::get('kegiatan/list', [ReportMarketingController::class, 'kegiatanList']);
         Route::get('kegiatan/{id}', [ReportMarketingController::class, 'kegiatanShow'])->whereNumber('id');
         Route::get('kegiatan/{id}/berkas/{fid}', [ReportMarketingController::class, 'kegiatanBerkas'])->whereNumber('id')->whereNumber('fid');
+    });
+
+    Route::middleware(['auth:sanctum', ModuleAccess::class.':rssp'])->prefix('report/rssp')->group(function () {
+        Route::get('cabang', [ReportRsspController::class, 'cabangList']);
+        Route::get('/', [ReportRsspController::class, 'index']);
+        Route::get('detail', [ReportRsspController::class, 'detail']);
     });
 
     Route::middleware(['auth:sanctum', ModuleAccess::class.':sc'])->prefix('sales-confirmation')->group(function () {

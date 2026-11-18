@@ -44,7 +44,7 @@ const notifs = ref([])
 const logoutOpen = ref(false)
 
 // Menu utama (bulat): yang sudah bisa dipakai membuka halamannya, sisanya memberi tahu "segera hadir".
-const limitedMods = computed(() => Array.isArray(auth.user?.modules) && auth.user.modules.every((x) => ['penawaran', 'stok_terminal', 'reservasi', 'mobil', 'inventory', 'dr', 'trucking_dr', 'master', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'report'].includes(x)))
+const limitedMods = computed(() => Array.isArray(auth.user?.modules) && auth.user.modules.every((x) => ['penawaran', 'stok_terminal', 'reservasi', 'mobil', 'inventory', 'dr', 'trucking_dr', 'master', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'report', 'rssp'].includes(x)))
 const has = (m) => !m || !Array.isArray(auth.user?.modules) || auth.user.modules.includes(m)
 const canPenawaran = computed(() => has('penawaran'))
 const canApprove = computed(() => ['penawaran', 'po', 'shipping', 'trucking', 'dr', 'trucking_dr', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc'].some((m) => has(m)))

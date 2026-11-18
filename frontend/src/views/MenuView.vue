@@ -52,7 +52,7 @@ const has = (m) => !m || !Array.isArray(auth.user?.modules) || auth.user.modules
 // OM/BM (hanya modul penawaran): menu lain, termasuk yang "segera hadir", disembunyikan.
 const limited = computed(() => {
   const mods = auth.user?.modules
-  return Array.isArray(mods) && mods.every((x) => ['penawaran', 'stok_terminal', 'reservasi', 'mobil', 'inventory', 'dr', 'trucking_dr', 'master', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'report'].includes(x))
+  return Array.isArray(mods) && mods.every((x) => ['penawaran', 'stok_terminal', 'reservasi', 'mobil', 'inventory', 'dr', 'trucking_dr', 'master', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'report', 'rssp'].includes(x))
 })
 const all = computed(() => [...modules, ...tools].filter((m) => (m.mod ? has(m.mod) : m.key === 'riwayat' ? has('penawaran') : !limited.value)))
 // Hanya yang sudah bisa dipakai tampil sebagai kartu; sisanya diringkas sebagai daftar "Segera hadir".
