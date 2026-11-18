@@ -80,7 +80,7 @@ class ReportRsspController extends Controller
     private function hitung(string $cabang, int $bulan, int $tahun): array
     {
         $nasional = $cabang === 'nasional';
-        $jumlahHari = cal_days_in_month(CAL_GREGORIAN, $bulan, $tahun);
+        $jumlahHari = (int) date('t', mktime(0, 0, 0, $bulan, 1, $tahun)); // tanpa ekstensi calendar (tidak ada di image Docker)
         $first = sprintf('%04d-%02d-01', $tahun, $bulan);
         $last = sprintf('%04d-%02d-%02d', $tahun, $bulan, $jumlahHari);
         $today = date('Y-m-d');

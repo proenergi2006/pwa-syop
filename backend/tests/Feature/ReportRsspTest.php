@@ -140,4 +140,24 @@ class ReportRsspTest extends TestCase
         $this->getJson("/api/v1/report/rssp/detail?type=sales&tid=1&tanggal=2025-10-01' OR 1=1")->assertStatus(422);
         $this->getJson('/api/v1/report/rssp?cabang=abc&bulan=99&tahun=1900')->assertOk();
     }
+
+    /** Regresi: image Docker server tidak punya ekstensi calendar (cal_days_in_month dkk) sehingga halaman error 500 di server padahal lolos di Mac. */
+    public function test_kode_tidak_memakai_fungsi_ekstensi_calendar(): void
+    {
+        $dilarang = '/\b(cal_[a-z_]+|jd[a-z]+|unixtojd|easter_(?:date|days))\s*\(/';
+        $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(app_path(), \FilesystemIterator::SKIP_DOTS));
+        foreach ($it as $f) {
+            if ($f->getExtension() === 'php') {
+                $this->assertSame(0, preg_match($dilarang, (string) file_get_contents($f->getPathname())), 'Fungsi ekstensi calendar dipakai di '.$f->getPathname());
+            }
+        }
+    }
+
+    public function test_jumlah_hari_semua_bulan(): void
+    {
+        $this->ceo();
+        foreach ([[2, 2024, 29], [2, 2025, 28], [4, 2025, 30], [12, 2025, 31]] as [$b, $t, $n]) {
+            $this->getJson("/api/v1/report/rssp?cabang=nasional&bulan=$b&tahun=$t")->assertOk()->assertJsonPath('jumlah_hari', $n);
+        }
+    }
 }
