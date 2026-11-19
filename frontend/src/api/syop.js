@@ -158,3 +158,8 @@ export const forecastBmCustomer = (params) => api.get('/forecast-bm/customer', {
 export const forecastBmIsi = (payload) => api.post('/forecast-bm/isi', payload).then((r) => r.data)
 export const forecastBmRequests = (params = {}) => api.get('/forecast-bm/request', { params }).then((r) => r.data)
 export const forecastBmRequest = (payload) => api.post('/forecast-bm/request', payload).then((r) => r.data)
+
+// Input Report RSSP (Purchasing): Forecast Supply dan Forecast Sales Planning
+export const rsspInputShow = (params) => api.get('/report/rssp/input', { params }).then((r) => r.data)
+export const rsspInputSave = (payload) => api.post('/report/rssp/input', payload).then((r) => r.data)
+export const rsspInputDelete = (payload) => api.post('/report/rssp/input/hapus', payload).then((r) => r.data)

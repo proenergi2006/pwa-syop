@@ -36,9 +36,9 @@ class ReportMarketingTest extends TestCase
         return (int) DB::table('pro_po_customer_plan')->where('status_plan', 1)->selectRaw('YEAR(MAX(tanggal_kirim)) y')->value('y');
     }
 
-    public function test_hanya_om_yang_boleh(): void
+    public function test_hanya_om_ceo_dan_bm_yang_boleh(): void
     {
-        foreach ([7, 5, 11] as $role) {
+        foreach ([5, 11] as $role) {
             $u = AclUser::where('id_role', $role)->where('is_active', 1)->first();
             if (! $u) {
                 continue;
@@ -57,7 +57,7 @@ class ReportMarketingTest extends TestCase
         $this->getJson('/api/v1/report/marketing/volume?tahun='.$this->tahunAda())->assertOk()->assertJsonStructure(['rows', 'totals']);
     }
 
-    public function test_menu_report_hanya_di_modul_om(): void
+    public function test_menu_report_di_modul_om_ceo_dan_bm(): void
     {
         $this->om();
         $this->assertContains('report', $this->getJson('/api/v1/auth/me')->json('user.modules'));
@@ -66,10 +66,74 @@ class ReportMarketingTest extends TestCase
         $modul = $this->getJson('/api/v1/auth/me')->json('user.modules');
         $this->assertContains('report', $modul);
         $this->assertContains('rssp', $modul);
-        foreach ([7, 5] as $role) {
-            Sanctum::actingAs(AclUser::where('id_role', $role)->where('is_active', 1)->firstOrFail(), ['*']);
-            $this->assertNotContains('report', $this->getJson('/api/v1/auth/me')->json('user.modules'));
+        // BM: Report Marketing saja (cabangnya sendiri), tanpa RSSP
+        Sanctum::actingAs(AclUser::where('id_role', 7)->where('is_active', 1)->firstOrFail(), ['*']);
+        $modul = $this->getJson('/api/v1/auth/me')->json('user.modules');
+        $this->assertContains('report', $modul);
+        $this->assertNotContains('rssp', $modul);
+        // Purchasing: RSSP saja, tanpa Report Marketing
+        Sanctum::actingAs(AclUser::where('id_role', 5)->where('is_active', 1)->firstOrFail(), ['*']);
+        $modul = $this->getJson('/api/v1/auth/me')->json('user.modules');
+        $this->assertContains('rssp', $modul);
+        $this->assertNotContains('report', $modul);
+    }
+
+    private function bm(): AclUser
+    {
+        // BM yang cabangnya punya realisasi kirim, supaya hasilnya tidak kosong
+        $cab = (int) DB::table('pro_pr_detail as a')->join('pro_po_customer_plan as b', 'a.id_plan', '=', 'b.id_plan')->join('pro_po_customer as c', 'b.id_poc', '=', 'c.id_poc')
+            ->join('pro_penawaran as p', 'p.id_penawaran', '=', 'c.id_penawaran')->where('b.status_plan', 1)->whereYear('b.tanggal_kirim', $this->tahunAda())->value('p.id_cabang');
+        $u = AclUser::where('id_role', 7)->where('is_active', 1)->where('id_wilayah', $cab)->first() ?? AclUser::where('id_role', 7)->where('is_active', 1)->firstOrFail();
+        Sanctum::actingAs($u, ['*']);
+
+        return $u;
+    }
+
+    public function test_bm_hanya_melihat_cabangnya_sendiri(): void
+    {
+        $u = $this->bm();
+        $cab = (int) $u->id_wilayah;
+        $y = $this->tahunAda();
+        // daftar cabang hanya cabang BM
+        $this->assertSame([$cab], array_column($this->getJson('/api/v1/report/marketing/cabang')->assertOk()->json('data'), 'id'));
+        // parameter cabang dari luar diabaikan: sama dengan memilih cabang BM sendiri sebagai OM
+        $bm = $this->getJson("/api/v1/report/marketing/volume?tahun=$y&cabang=99999")->assertOk();
+        $this->assertSame($cab, $bm->json('cabang'));
+        Sanctum::actingAs(AclUser::where('id_role', 6)->where('is_active', 1)->firstOrFail(), ['*']);
+        $om = $this->getJson("/api/v1/report/marketing/volume?tahun=$y&cabang=$cab")->assertOk();
+        $this->assertEquals($om->json('totals'), $bm->json('totals'));
+        $this->assertEquals($om->json('total'), $bm->json('total'));
+        $semua = $this->getJson("/api/v1/report/marketing/volume?tahun=$y")->assertOk();
+        $this->assertLessThanOrEqual($semua->json('total'), $bm->json('total')); // tidak lebih besar dari nasional
+        // semua jenis laporan tetap bisa dibuka BM
+        $this->bm();
+        foreach (['aktif', 'baru', 'kegiatan'] as $jenis) {
+            $this->getJson("/api/v1/report/marketing/$jenis?tahun=$y")->assertOk()->assertJsonPath('cabang', $cab);
         }
+    }
+
+    public function test_bm_kegiatan_hanya_marketing_cabangnya(): void
+    {
+        $u = $this->bm();
+        $cab = (int) $u->id_wilayah;
+        $dariCabang = static fn ($id) => (int) DB::table('pro_marketing_report_master as a')->join('acl_user as b', 'b.id_user', '=', 'a.create_by')->where('a.id_mkt_report', $id)->value('b.id_wilayah');
+        $ada = DB::table('pro_marketing_report_master as a')->join('acl_user as b', 'b.id_user', '=', 'a.create_by')->where('b.id_wilayah', $cab)->value('a.id_mkt_report');
+        $lain = DB::table('pro_marketing_report_master as a')->join('acl_user as b', 'b.id_user', '=', 'a.create_by')->where('b.id_wilayah', '!=', $cab)->value('a.id_mkt_report');
+        $list = $this->getJson('/api/v1/report/marketing/kegiatan/list?tahun='.$this->tahunKegiatan().'&per_page=50')->assertOk();
+        foreach ($list->json('data') as $k) {
+            $this->assertSame($cab, $dariCabang($k['id']));
+        }
+        if ($lain) {
+            $this->getJson("/api/v1/report/marketing/kegiatan/$lain")->assertNotFound();
+        }
+        if ($ada) {
+            $this->getJson("/api/v1/report/marketing/kegiatan/$ada")->assertOk();
+        }
+    }
+
+    private function tahunKegiatan(): int
+    {
+        return (int) DB::table('pro_marketing_report_master')->selectRaw('YEAR(MAX(tanggal)) y')->value('y') ?: (int) date('Y');
     }
 
     public function test_volume_sama_dengan_query_web(): void

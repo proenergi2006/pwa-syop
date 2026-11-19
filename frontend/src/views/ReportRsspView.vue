@@ -11,10 +11,14 @@ import Donut from '../components/charts/Donut.vue'
 import RankBars from '../components/charts/RankBars.vue'
 import * as syop from '../api/syop'
 import { errorMessage } from '../api/client'
+import { useAuth } from '../stores/auth'
+import { showToast } from '../composables/useToast'
+import { openFile } from '../utils/openFile'
 import { angka, tanggal } from '../utils/format'
 import { bulanPanjang, jumlah, ringkas } from '../utils/chart'
 
 const router = useRouter()
+const auth = useAuth()
 const NOW = new Date()
 const bulan = ref(NOW.getMonth() + 1)
 const tahun = ref(NOW.getFullYear())
@@ -157,9 +161,9 @@ const table = computed(() => {
   const mk = (key, label, vals, o = {}) => ({ key, label, vals, ...o })
   const sections = [
     { title: t('rs.t.stockAwal'), rows: d.depots.flatMap((x) => [mk('sa' + x.id, x.nama, x.stock_awal), mk('ls' + x.id, t('rs.t.losses', { n: x.nama }), x.loss, { cls: 'loss', fmt: fmtLoss, type: 'loss', tid: x.id })]) },
-    { title: t('rs.t.supply'), rows: d.depots.map((x) => mk('su' + x.id, x.nama, x.supply, { type: 'supply', tid: x.id, fc: x.supply_fc })) },
+    { title: t('rs.t.supply'), rows: d.depots.map((x) => mk('su' + x.id, x.nama, x.supply, { type: 'supply', tid: x.id, fc: x.supply_fc, edit: 'supply' })) },
     { title: t('rs.t.transfer'), rows: d.depots.map((x) => mk('tf' + x.id, x.nama, x.transfer, { type: 'transfer', tid: x.id })) },
-    { title: t('rs.t.sales'), rows: [mk('fc', t('rs.t.forecast'), d.forecast, { cls: 'fcst', total: true, type: 'forecast', tid: nasional.value ? '' : d.cabang }), ...d.depots.map((x) => mk('pl' + x.id, x.nama, x.plan, { cls: 'plan' })), ...d.depots.map((x) => mk('sl' + x.id, x.nama, x.sales, { type: 'sales', tid: x.id }))] },
+    { title: t('rs.t.sales'), rows: [mk('fc', t('rs.t.forecast'), d.forecast, { cls: 'fcst', total: true, type: 'forecast', tid: nasional.value ? '' : d.cabang }), ...d.depots.map((x) => mk('pl' + x.id, x.nama, x.plan, { cls: 'plan', edit: 'plan', tid: x.id })), ...d.depots.map((x) => mk('sl' + x.id, x.nama, x.sales, { type: 'sales', tid: x.id }))] },
   ]
   const totals = [
     mk('ts', t('rs.t.totalSales'), d.total_sales, { cls: 'tsales', total: true, actual: true }),
@@ -176,6 +180,7 @@ function cellClass(row, col) {
   if (row.actual && col.i < upto.value) c.push('act')
   if (row.fc?.[col.i]) c.push('fcsup')
   if (row.type && (row.vals[col.i] || 0) !== 0 && !row.fc?.[col.i]) c.push('click')
+  if (canInput.value && row.edit && !(row.edit === 'supply' && (row.vals[col.i] || 0) > 0 && !row.fc?.[col.i])) c.push('ed')
   return c.join(' ')
 }
 
@@ -194,7 +199,10 @@ async function bukaDetail(type, tid, ymd, title, fromSummary = false) {
   } catch (e) { det.error = errorMessage(e) } finally { det.loading = false }
 }
 function klikSel(row, col) {
-  if (col.k !== 'day' || !row.type) return
+  if (col.k !== 'day') return
+  const ymd = data.value.hari[col.i].ymd
+  if (canInput.value && row.edit && !(row.edit === 'supply' && (row.vals[col.i] || 0) > 0 && !row.fc?.[col.i])) return bukaInput(row.edit, row.tid, ymd, `${row.label} · ${dayLabel(col.i)}`)
+  if (!row.type) return
   const v = row.vals[col.i] || 0
   if (v === 0 || row.fc?.[col.i]) return
   bukaDetail(row.type, row.tid, data.value.hari[col.i].ymd, `${row.label} · ${dayLabel(col.i)}`)
@@ -218,6 +226,52 @@ const ringkasRows = computed(() => {
   ].filter((r) => r.k === 'open' || r.k === 'close' || r.v !== 0)
 })
 
+/* ---------- unduh Excel ---------- */
+const xlsBusy = ref(false)
+async function unduhExcel() {
+  if (xlsBusy.value) return
+  xlsBusy.value = true
+  try { await openFile(`/report/rssp/export?cabang=${encodeURIComponent(cabang.value)}&bulan=${bulan.value}&tahun=${tahun.value}`, 'RSSP-Fuel.xlsx') } finally { xlsBusy.value = false }
+}
+
+/* ---------- input Purchasing: Forecast Supply dan alokasi Forecast Sales (hanya per terminal, bukan mode semua cabang) ---------- */
+const canInput = computed(() => Array.isArray(auth.user?.modules) && auth.user.modules.includes('rssp_input') && !nasional.value)
+const inp = reactive({ jenis: '', tid: 0, ymd: '', label: '', loading: false, busy: false, error: '', info: null, qty: '', ket: '' })
+async function bukaInput(jenis, tid, ymd, label, fromSummary = false) {
+  Object.assign(det, { open: true, mode: 'input', title: t(jenis === 'supply' ? 'rs.in.supplyTitle' : 'rs.in.planTitle'), sub: label, loading: false, error: '', data: null, ctx: fromSummary ? det.ctx : null })
+  Object.assign(inp, { jenis, tid, ymd, label, loading: true, busy: false, error: '', info: null, qty: '', ket: '' })
+  try {
+    const r = await syop.rsspInputShow({ jenis, tid, tanggal: ymd })
+    inp.info = r
+    inp.qty = r.qty != null ? String(r.qty) : ''
+    inp.ket = r.keterangan || ''
+  } catch (e) { inp.error = errorMessage(e) } finally { inp.loading = false }
+}
+const inpBlocked = computed(() => !inp.info || inp.info.terkunci || (inp.jenis === 'plan' && !inp.info.disetujui))
+async function simpanInput() {
+  const v = String(inp.qty).trim().replace(',', '.')
+  if (v === '' || isNaN(v) || parseFloat(v) < 0) return (inp.error = t('rs.in.invalid'))
+  inp.busy = true
+  inp.error = ''
+  try {
+    const r = await syop.rsspInputSave({ jenis: inp.jenis, tid: inp.tid, tanggal: inp.ymd, qty: parseFloat(v), keterangan: inp.ket.trim() || undefined })
+    showToast(r.message === 'Tersimpan.' ? t('rs.in.saved') : r.message, 'ok')
+    det.open = false
+    load()
+  } catch (e) { inp.error = errorMessage(e) } finally { inp.busy = false }
+}
+async function hapusInput() {
+  inp.busy = true
+  inp.error = ''
+  try {
+    await syop.rsspInputDelete({ jenis: inp.jenis, tid: inp.tid, tanggal: inp.ymd })
+    showToast(t('rs.in.deleted'), 'ok')
+    det.open = false
+    load()
+  } catch (e) { inp.error = errorMessage(e) } finally { inp.busy = false }
+}
+const sudahActual = (x, i) => x.supply[i] > 0 && !x.supply_fc[i]
+
 const back = () => (window.history.length > 1 ? router.back() : router.replace({ name: 'report' }))
 </script>
 
@@ -226,7 +280,7 @@ const back = () => (window.history.length > 1 ? router.back() : router.replace({
     <header class="bar">
       <button class="back" :aria-label="t('common.back')" @click="back"><Icon name="back" :size="20" /></button>
       <div class="bar-t"><b>{{ t('rs.title') }}</b></div>
-      <span class="back" style="visibility:hidden" />
+      <button class="xl" :disabled="xlsBusy || !data" :aria-label="t('rs.xls')" @click="unduhExcel"><Icon name="doc" :size="16" />{{ xlsBusy ? '…' : t('rs.xls') }}</button>
     </header>
 
     <div class="wrap">
@@ -327,6 +381,7 @@ const back = () => (window.history.length > 1 ? router.back() : router.replace({
               <button class="btn btn-ghost btn-block" @click="tableOpen = !tableOpen">{{ tableOpen ? t('rs.t.hide') : t('rs.t.show') }}</button>
               <template v-if="tableOpen && table">
                 <p class="hint">{{ t('rs.t.legend') }}</p>
+                <p v-if="canInput" class="hint in-hint">{{ t('rs.in.hint') }}</p>
                 <div class="tscroll">
                   <table class="rt">
                     <thead>
@@ -368,7 +423,7 @@ const back = () => (window.history.length > 1 ? router.back() : router.replace({
       <div class="sheet" role="dialog" aria-modal="true">
         <div class="grab" />
         <div class="sh-h">
-          <button v-if="det.mode === 'detail' && det.ctx" class="back" :aria-label="t('common.back')" @click="det.mode = 'summary'"><Icon name="back" :size="18" /></button>
+          <button v-if="(det.mode === 'detail' || det.mode === 'input') && det.ctx" class="back" :aria-label="t('common.back')" @click="det.mode = 'summary'"><Icon name="back" :size="18" /></button>
           <div class="sh-w">
             <h2 class="sh-t">{{ det.title }}</h2>
             <p class="sh-s">{{ det.sub }}</p>
@@ -382,6 +437,33 @@ const back = () => (window.history.length > 1 ? router.back() : router.replace({
             <b>{{ (r.fmt || ((v) => angka(v, 1)))(r.v) }} L</b>
             <button v-if="r.type" class="btn btn-ghost lnk" @click="dariRingkas(r.type)">{{ t('rm.k.view') }}</button>
           </div>
+          <div v-if="canInput && det.ctx" class="in-cta">
+            <button v-if="!sudahActual(det.ctx.depot, det.ctx.i)" class="btn btn-ghost" @click="bukaInput('supply', det.ctx.depot.id, det.ctx.ymd, `${det.ctx.depot.nama} · ${dayLabel(det.ctx.i)}`, true)">{{ t('rs.in.ctaSupply') }}</button>
+            <button class="btn btn-ghost" @click="bukaInput('plan', det.ctx.depot.id, det.ctx.ymd, `${det.ctx.depot.nama} · ${dayLabel(det.ctx.i)}`, true)">{{ t('rs.in.ctaPlan') }}</button>
+          </div>
+        </template>
+
+        <template v-else-if="det.mode === 'input'">
+          <div v-if="inp.loading" class="stack"><div class="skel" style="height:90px" /><div class="skel" style="height:120px" /></div>
+          <template v-else>
+            <p v-if="inp.info" class="in-t">{{ inp.info.terminal.nama }} · {{ inp.info.terminal.cabang }}</p>
+            <div v-if="inp.info && inp.jenis === 'plan'" class="in-box">
+              <div><span>{{ t('rs.in.total') }}</span><b>{{ angka(inp.info.total_forecast, 1) }} L</b></div>
+              <div><span>{{ t('rs.in.other') }}</span><b>{{ angka(inp.info.dialokasi_lain, 1) }} L</b></div>
+              <div class="hi"><span>{{ t('rs.in.left') }}</span><b>{{ angka(inp.info.sisa, 1) }} L</b></div>
+            </div>
+            <p v-if="inp.info && inp.jenis === 'plan' && !inp.info.disetujui" class="in-warn"><Icon name="alert" :size="16" /> {{ t('rs.in.notApproved', { p: inp.info.periode }) }}</p>
+            <p v-else-if="inp.info && inp.info.terkunci" class="in-warn"><Icon name="alert" :size="16" /> {{ t('rs.in.locked') }}</p>
+            <template v-if="inp.info">
+              <div class="field"><label for="iq">{{ t('rs.in.qty') }}</label><input id="iq" v-model="inp.qty" class="in-i" inputmode="decimal" :disabled="inpBlocked" placeholder="0" /></div>
+              <div class="field"><label for="ik">{{ t('rs.in.note') }}</label><textarea id="ik" v-model="inp.ket" class="plain" maxlength="255" :disabled="inpBlocked" /></div>
+            </template>
+            <p v-if="inp.error" class="err-text" role="alert" style="margin-bottom:10px">{{ inp.error }}</p>
+            <div v-if="inp.info" class="in-act">
+              <button v-if="inp.info.ada" class="btn btn-ghost bad" :disabled="inp.busy" @click="hapusInput">{{ t('rs.in.delete') }}</button>
+              <button class="btn btn-primary" :disabled="inp.busy || inpBlocked" @click="simpanInput">{{ inp.busy ? t('det.processing') : t('rs.in.save') }}</button>
+            </div>
+          </template>
         </template>
 
         <template v-else>
@@ -432,6 +514,18 @@ const back = () => (window.history.length > 1 ? router.back() : router.replace({
 <style scoped>
 .bar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 8px; padding: calc(var(--safe-top) + 8px) 12px 8px; background: var(--glass-bar); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
 .bar-t { flex: 1; text-align: center; font-size: 14.5px; }
+.xl { flex: none; min-width: 44px; height: 44px; padding: 0 12px; border-radius: 13px; border: 1px solid var(--line); background: var(--card); color: #0b7a4b; font-size: 13px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: inherit; }
+.xl:disabled { opacity: 0.6; }
+.rt td.ed { outline: 1.5px dashed color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: -2px; cursor: pointer; background: color-mix(in srgb, var(--accent) 5%, transparent); }
+.in-cta { display: grid; gap: 8px; margin-top: 14px; }
+.in-t { margin: 0 0 10px; font-size: 13px; color: var(--muted); font-weight: 600; }
+.in-box { display: grid; gap: 6px; padding: 10px 12px; border-radius: 14px; background: var(--blue-50); margin-bottom: 12px; }
+.in-box div { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--ink-2); }
+.in-box .hi b { color: #0b7a4b; font-size: 15px; }
+.in-warn { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 12px; padding: 9px 11px; border-radius: 12px; background: #fff3d6; color: #8a5b00; font-size: 12.5px; font-weight: 600; }
+.in-i { width: 100%; height: 48px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font-size: 18px; font-weight: 800; padding: 0 14px; font-family: inherit; }
+.in-act { display: grid; grid-template-columns: auto 1fr; gap: 10px; }
+.in-act .bad { color: #b4232a; }
 .back { width: 44px; height: 44px; border-radius: 13px; border: 1px solid var(--line); background: var(--card); color: var(--ink); display: grid; place-items: center; flex: none; }
 .wrap { padding: 12px 16px calc(var(--safe-bottom) + 32px); display: grid; gap: 12px; min-width: 0; }
 .stack { display: grid; gap: 12px; }

@@ -10,9 +10,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 /**
- * Report RSSP Fuel untuk OM (peran 6) dan CEO (peran 21). Hanya baca.
+ * Report RSSP Fuel untuk Purchasing (peran 5), OM (peran 6), dan CEO (peran 21). Hanya baca.
  * Sumber: rssp-fuel.php (filter), rssp-fuel-loaded.php (rumus matriks harian), __get_rssp_detail.php (rincian sel).
- * Input forecast supply / forecast sales planning milik Procurement (peran 5), tidak ada di sini.
+ * Input forecast supply / forecast sales planning milik Procurement (peran 5) ada di RsspInputController. Excel: export().
  *
  * Matriks per hari: STOCK AWAL, DAILY LOSSES, SUPPLY (actual, atau forecast bila actual belum ada dan tanggal belum lewat),
  * TRANSFER STOCK (keluar), SALES (actual per terminal) + FORECAST (total, ×1000 dari pro_forecast) dan planning per terminal,
@@ -61,6 +61,90 @@ class ReportRsspController extends Controller
         $data = Cache::remember("rssp:$cabang:$bulan:$tahun:".date('Ymd'), self::TTL, fn () => $this->hitung($cabang, $bulan, $tahun));
 
         return response()->json($data);
+    }
+
+    /** Unduh Excel: angka yang sama dengan tabel di layar (matriks harian, dari hitungan yang sama), baris mentah supaya bisa di-SUM. */
+    public function export(Request $r)
+    {
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(120);
+        }
+        [$cabang, $bulan, $tahun] = $this->parameter($r);
+        $d = Cache::remember("rssp:$cabang:$bulan:$tahun:".date('Ymd'), self::TTL, fn () => $this->hitung($cabang, $bulan, $tahun));
+        $bln = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][$bulan];
+        $pendek = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'][$bulan];
+        $n = $d['jumlah_hari'];
+
+        $x = new \App\Support\Xlsx('RSSP Fuel');
+        $kolom = [];
+        for ($i = 0; $i < $n; $i++) {
+            $kolom[] = ['day', $i];
+            if ($i === 13) {
+                $kolom[] = ['tot', 1];
+            }
+        }
+        $kolom[] = ['tot', 2];
+        $x->row([['RSSP FUEL - '.strtoupper($d['nama_cabang']).' - '.strtoupper($bln).' '.$tahun, \App\Support\Xlsx::S_TITLE]]);
+        $x->merge('A1:'.\App\Support\Xlsx::col(count($kolom)).'1');
+        $x->row([]);
+        $head = [['Keterangan', \App\Support\Xlsx::S_HEAD]];
+        foreach ($kolom as [$k, $v]) {
+            $head[] = $k === 'day' ? [sprintf('%02d-%s', $v + 1, $pendek), $d['hari'][$v]['weekend'] ? \App\Support\Xlsx::S_HEAD_OFF : \App\Support\Xlsx::S_HEAD] : ['TOTAL P'.$v, \App\Support\Xlsx::S_HEAD];
+        }
+        $x->row($head);
+
+        $periode = fn (array $vals, int $p) => array_sum(array_slice($vals, $p === 1 ? 0 : 14, $p === 1 ? 14 : null));
+        $baris = function (string $label, array $vals, bool $total = false, bool $totalP = false, int $labelStyle = \App\Support\Xlsx::S_LABEL, int $numStyle = \App\Support\Xlsx::S_NUM) use ($x, $kolom, $periode) {
+            $row = [[$label, $labelStyle]];
+            foreach ($kolom as [$k, $v]) {
+                $row[] = [$k === 'day' ? round((float) ($vals[$v] ?? 0), 2) : ($totalP ? round((float) $periode($vals, $v), 2) : null), $numStyle];
+            }
+            $x->row($row);
+        };
+        $seksi = function (string $judul) use ($x, $kolom) {
+            $x->row(array_merge([[$judul, \App\Support\Xlsx::S_SECTION]], array_fill(0, count($kolom), ['', \App\Support\Xlsx::S_SECTION])));
+        };
+
+        $dp = $d['depots'];
+        $seksi('STOCK AWAL');
+        foreach ($dp as $z) {
+            $baris($z['nama'], $z['stock_awal']);
+            $baris('Daily Losses '.$z['nama'], $z['loss']);
+        }
+        $seksi('SUPPLY');
+        foreach ($dp as $z) {
+            $baris($z['nama'], $z['supply']);
+        }
+        $seksi('TRANSFER STOCK');
+        foreach ($dp as $z) {
+            $baris($z['nama'], $z['transfer']);
+        }
+        $seksi('SALES');
+        $baris('Forecast', $d['forecast'], false, true);
+        foreach ($dp as $z) {
+            $baris('Planning '.$z['nama'], $z['plan']);
+        }
+        foreach ($dp as $z) {
+            $baris($z['nama'], $z['sales']);
+        }
+        $baris('TOTAL ACTUAL SALES', $d['total_sales'], true, true, \App\Support\Xlsx::S_TOTAL_LABEL, \App\Support\Xlsx::S_TOTAL_NUM);
+        $baris('STOCK AKHIR (TOTAL)', $d['stock_akhir_total'], true, false, \App\Support\Xlsx::S_TOTAL_LABEL, \App\Support\Xlsx::S_TOTAL_NUM);
+        foreach ($dp as $z) {
+            $baris('STOCK AKHIR ('.$z['nama'].')', $z['stock_akhir']);
+        }
+        $x->width(0, 34);
+        for ($i = 1; $i <= count($kolom); $i++) {
+            $x->width($i, 11);
+        }
+        $x->freeze(1, 3);
+
+        $nama = 'RSSP-Fuel-'.trim(preg_replace('/[^A-Za-z0-9]+/', '-', $d['nama_cabang']), '-')."-{$bulan}-{$tahun}.xlsx";
+
+        return response($x->build(), 200, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="'.$nama.'"',
+            'Cache-Control' => 'no-store',
+        ]);
     }
 
     private function hitung(string $cabang, int $bulan, int $tahun): array

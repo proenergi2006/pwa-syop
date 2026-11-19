@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Report Marketing untuk OM (peran 6). Hanya baca.
+ * Report Marketing untuk OM (peran 6) dan CEO (peran 21), semua cabang; BM (peran 7) otomatis dibatasi ke cabangnya sendiri (seperti web). Hanya baca.
  * Sumber: marketing-volume-report.php + __get_volume_marketing.php + data-detail-volume-marketing.php (volume kirim),
  *         marketing-active-customer.php + __get_active_customer.php + data-detail-active-customer.php (customer aktif),
  *         __get_new_customer.php + __get_marketing_new_customer.php (customer baru).
@@ -26,8 +26,23 @@ class ReportMarketingController extends Controller
         return max(2015, min((int) date('Y') + 1, (int) $r->query('tahun', date('Y'))));
     }
 
+    /** Cabang yang dipaksakan untuk akun ini: BM hanya cabangnya sendiri (-1 bila akun belum punya cabang, jadi tidak ada data); peran lain null (bebas memilih). */
+    private function cabangPaksa(Request $r): ?int
+    {
+        $u = $r->user();
+        if ((int) $u->id_role !== 7) {
+            return null;
+        }
+        $w = (int) $u->id_wilayah;
+
+        return $w > 0 ? $w : -1;
+    }
+
     private function cabang(Request $r): ?int
     {
+        if (($paksa = $this->cabangPaksa($r)) !== null) {
+            return $paksa;
+        }
         $c = (int) $r->query('cabang', 0);
 
         return $c > 0 ? $c : null;
@@ -199,9 +214,11 @@ class ReportMarketingController extends Controller
         ]);
     }
 
-    public function cabangList(): JsonResponse
+    public function cabangList(Request $r): JsonResponse
     {
-        return response()->json(['data' => DB::table('pro_master_cabang')->orderBy('nama_cabang')->get(['id_master as id', 'nama_cabang as nama'])]);
+        $paksa = $this->cabangPaksa($r);
+
+        return response()->json(['data' => DB::table('pro_master_cabang')->when($paksa !== null, fn ($q) => $q->where('id_master', $paksa))->orderBy('nama_cabang')->get(['id_master as id', 'nama_cabang as nama'])]);
     }
 
     public function volume(Request $r): JsonResponse
@@ -452,14 +469,14 @@ class ReportMarketingController extends Controller
         ]);
     }
 
-    private function kegiatanBaris1(int $id): ?object
+    private function kegiatanBaris1(int $id, ?int $cabang = null): ?object
     {
-        return DB::selectOne('SELECT a.*, d.nama_customer, d.alamat_customer, d.email_customer, d.telp_customer, b.fullname AS user_name, '.self::HASIL_TERAKHIR.' AS hasil '.self::dariKegiatan().' AND a.id_mkt_report = ?', [$id]);
+        return DB::selectOne('SELECT a.*, d.nama_customer, d.alamat_customer, d.email_customer, d.telp_customer, b.fullname AS user_name, '.self::HASIL_TERAKHIR.' AS hasil '.self::dariKegiatan().' AND a.id_mkt_report = ?'.($cabang ? ' AND b.id_wilayah = ?' : ''), array_filter([$id, $cabang], fn ($v) => $v !== null));
     }
 
-    public function kegiatanShow(int $id): JsonResponse
+    public function kegiatanShow(Request $r, int $id): JsonResponse
     {
-        $x = $this->kegiatanBaris1($id);
+        $x = $this->kegiatanBaris1($id, $this->cabangPaksa($r));
         if (! $x) {
             return response()->json(['message' => 'Data kegiatan tidak ditemukan.'], 404);
         }
@@ -484,9 +501,9 @@ class ReportMarketingController extends Controller
     }
 
     /** Lampiran kegiatan: fid 0 = berkas utama (file_upload), selain itu id baris di pro_marketing_report_master_file. */
-    public function kegiatanBerkas(int $id, int $fid)
+    public function kegiatanBerkas(Request $r, int $id, int $fid)
     {
-        if (! $this->kegiatanBaris1($id)) {
+        if (! $this->kegiatanBaris1($id, $this->cabangPaksa($r))) {
             return response()->json(['message' => 'Data kegiatan tidak ditemukan.'], 404);
         }
         if ($fid === 0) {

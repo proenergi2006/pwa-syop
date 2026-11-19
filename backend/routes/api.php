@@ -24,6 +24,7 @@ use App\Http\Controllers\ForecastOmController;
 use App\Http\Controllers\RequestOaController;
 use App\Http\Controllers\ReportMarketingController;
 use App\Http\Controllers\ReportRsspController;
+use App\Http\Controllers\RsspInputController;
 use App\Http\Controllers\RefundPenerimaController;
 use App\Http\Controllers\ReservasiController;
 use App\Http\Controllers\SalesConfirmationController;
@@ -166,6 +167,13 @@ Route::prefix('v1')->group(function () {
         Route::get('cabang', [ReportRsspController::class, 'cabangList']);
         Route::get('/', [ReportRsspController::class, 'index']);
         Route::get('detail', [ReportRsspController::class, 'detail']);
+        Route::get('export', [ReportRsspController::class, 'export'])->middleware('throttle:20,1');
+    });
+
+    Route::middleware(['auth:sanctum', ModuleAccess::class.':rssp_input'])->prefix('report/rssp/input')->group(function () {
+        Route::get('/', [RsspInputController::class, 'show']);
+        Route::post('/', [RsspInputController::class, 'save'])->middleware('throttle:60,1');
+        Route::post('hapus', [RsspInputController::class, 'destroy'])->middleware('throttle:60,1');
     });
 
     Route::middleware(['auth:sanctum', ModuleAccess::class.':oa'])->prefix('request-oa')->group(function () {

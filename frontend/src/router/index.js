@@ -29,7 +29,7 @@ const router = createRouter({
     { path: '/produk/form', name: 'produk-form', component: () => import('../views/ProdukFormView.vue'), meta: { module: 'produk' } },
     { path: '/produk/:id(\\d+)', name: 'produk-detail', component: () => import('../views/ProdukDetailView.vue'), props: true, meta: { module: 'produk' } },
     { path: '/dr', name: 'dr', component: () => import('../views/DrView.vue'), meta: { nav: true, module: 'dr' } },
-    { path: '/report', name: 'report', component: () => import('../views/ReportView.vue'), meta: { nav: true, module: 'report' } },
+    { path: '/report', name: 'report', component: () => import('../views/ReportView.vue'), meta: { nav: true, module: ['report', 'rssp'] } }, // Menu Report: Report Marketing (OM, BM, CEO) dan/atau Report RSSP (Purchasing, OM, CEO)
     { path: '/report/rssp', name: 'report-rssp', component: () => import('../views/ReportRsspView.vue'), meta: { module: 'rssp' } },
     { path: '/report/marketing', name: 'report-marketing', component: () => import('../views/ReportMarketingView.vue'), meta: { module: 'report' } },
     { path: '/sales-confirmation', name: 'sc', component: () => import('../views/SalesConfirmationView.vue'), meta: { nav: true, module: 'sc' } },
@@ -66,7 +66,7 @@ router.beforeEach((to, from) => {
   // Modul yang tidak tersedia untuk peran ini kembali ke Beranda.
   const mods = JSON.parse(localStorage.getItem('orcax_user') || 'null')?.modules
   const need = to.meta.module || (['approval', 'approval-detail', 'riwayat'].includes(to.name) ? 'penawaran' : '')
-  if (need && Array.isArray(mods) && !mods.includes(need)) return { name: 'home' }
+  if (need && Array.isArray(mods) && !(Array.isArray(need) ? need.some((m) => mods.includes(m)) : mods.includes(need))) return { name: 'home' }
 })
 
 export default router

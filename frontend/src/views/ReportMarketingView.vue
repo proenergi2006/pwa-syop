@@ -10,6 +10,7 @@ import RankBars from '../components/charts/RankBars.vue'
 import HeatGrid from '../components/charts/HeatGrid.vue'
 import Spark from '../components/charts/Spark.vue'
 import * as syop from '../api/syop'
+import { useAuth } from '../stores/auth'
 import { errorMessage } from '../api/client'
 import { angka, tanggal } from '../utils/format'
 import { openFile } from '../utils/openFile'
@@ -28,7 +29,9 @@ const META = {
 
 const tab = ref('sum') // sum | volume | aktif | baru
 const tahun = ref(NOW)
+const auth = useAuth()
 const cabang = ref('')
+const cabangTetap = computed(() => auth.user?.id_role === 7) // BM: laporan otomatis hanya cabangnya sendiri (diatur server)
 const mkt = ref(0) // 0 = semua marketing
 const selM = ref(-1) // bulan yang diketuk pada grafik (0-11)
 const cabangs = ref([])
@@ -266,7 +269,8 @@ const tabs = [['sum', 'rm.tab.sum'], ['volume', 'rm.tab.vol'], ['aktif', 'rm.t.a
           <b>{{ tahun }}</b>
           <button :disabled="tahun >= NOW" aria-label="+" @click="tahun++"><Icon name="chevron" :size="18" /></button>
         </div>
-        <select v-model="cabang" class="sel" :aria-label="t('rm.allBranch')">
+        <div v-if="cabangTetap" class="sel fixed" :title="t('rm.myBranch')"><Icon name="lock" :size="16" /><span>{{ cabangs[0]?.nama || t('rm.myBranch') }}</span></div>
+        <select v-else v-model="cabang" class="sel" :aria-label="t('rm.allBranch')">
           <option value="">{{ t('rm.allBranch') }}</option>
           <option v-for="c in cabangs" :key="c.id" :value="c.id">{{ c.nama }}</option>
         </select>
@@ -524,6 +528,8 @@ const tabs = [['sum', 'rm.tab.sum'], ['volume', 'rm.tab.vol'], ['aktif', 'rm.t.a
 .yr b { min-width: 44px; text-align: center; font-size: 15px; font-variant-numeric: tabular-nums; }
 .yr button { width: 36px; height: 40px; display: grid; place-items: center; color: var(--accent); border-radius: 10px; border: 0; background: none; padding: 0; }
 .yr button:disabled { opacity: 0.3; }
+.sel.fixed { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--ink-2); background: var(--blue-50); }
+.sel.fixed span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sel { width: 100%; min-width: 0; height: 44px; padding: 0 10px; border-radius: 13px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font-size: 13.5px; font-family: inherit; }
 .chips { padding-bottom: 2px; gap: 6px; }
 .chip { padding: 0 10px; font-size: 13px; }

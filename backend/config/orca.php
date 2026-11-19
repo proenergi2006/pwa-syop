@@ -42,8 +42,9 @@ return [
         'verifikasi_customer' => [7, 6], // Verifikasi Data Customer: BM dan OM
         'trucking' => [21], // Trucking Instruction: persetujuan CEO
         'shipping' => [21], // Shipping Instruction: persetujuan akhir CEO
-        'report' => [6, 21], // Menu Report + Report Marketing (volume, customer aktif, customer baru, kegiatan): OM dan CEO
-        'rssp' => [6, 21], // Report RSSP Fuel (stok, supply, sales harian): OM dan CEO
+        'report' => [6, 7, 21], // Menu Report + Report Marketing (volume, customer aktif, customer baru, kegiatan): OM dan CEO semua cabang, BM hanya cabangnya
+        'rssp_input' => [5], // Input Report RSSP: Forecast Supply dan Forecast Sales Planning per terminal (Procurement/Purchasing)
+        'rssp' => [5, 6, 21], // Report RSSP Fuel (stok, supply, sales harian): Purchasing, OM, dan CEO
         'oa' => [21], // Verifikasi Request Input OA: persetujuan CEO
         'forecast_bm' => [7], // Forecast Customer BM: isi forecast harian cabang sendiri, request tambahan qty ke OM
         'forecast_om' => [6], // Forecast Customer OM: isi forecast harian, ajukan ke CEO, setujui/tolak request qty dari BM
