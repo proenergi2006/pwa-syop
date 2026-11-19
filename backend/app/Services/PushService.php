@@ -68,12 +68,14 @@ class PushService
                     $sub?->delete();
                 } else {
                     Log::warning('[Push] gagal: ' . $report->getReason());
+                    AppSettings::catatPushGagal((string) $report->getReason());
                 }
             }
 
             return $ok;
         } catch (\Throwable $e) {
             Log::warning('[Push] galat: ' . $e->getMessage());
+            AppSettings::catatPushGagal($e->getMessage());
 
             return 0;
         }

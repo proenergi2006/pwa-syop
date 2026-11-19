@@ -7,9 +7,12 @@ import { navDir } from './composables/useNav'
 import { useInbox } from './stores/inbox'
 import { update, reloadApp, snooze } from './composables/useUpdate'
 import { t } from './i18n'
-import { tokenStore } from './api/client'
+import { tokenStore, setMaintenanceHandler } from './api/client'
+import { maint, setMaintenance, cekStatus } from './composables/useMaintenance'
+import { tanggalJam } from './utils/format'
 import { useAuth } from './stores/auth'
 
+setMaintenanceHandler(setMaintenance)
 const route = useRoute()
 const inbox = useInbox()
 const auth = useAuth()
@@ -60,6 +63,17 @@ onBeforeUnmount(() => { clearInterval(badgeTimer); document.removeEventListener(
         <button class="upd-x" :aria-label="t('upd.later')" @click="snooze">×</button>
       </div>
     </Transition>
+    <Transition name="upd">
+      <div v-if="maint.aktif" class="maint" role="alertdialog" aria-modal="true" aria-live="assertive">
+        <div class="maint-c">
+          <img src="/icons/logo.png" alt="" />
+          <h1>{{ t('sys.maint.title') }}</h1>
+          <p>{{ maint.pesan || t('sys.maint.default') }}</p>
+          <small v-if="maint.sampai">{{ t('sys.maint.until', { t: tanggalJam(maint.sampai) }) }}</small>
+          <button class="maint-b" :disabled="maint.mengecek" @click="cekStatus">{{ maint.mengecek ? t('common.loading') : t('sys.maint.retry') }}</button>
+        </div>
+      </div>
+    </Transition>
     <div v-if="toast.msg" class="toast" :class="toast.kind" role="status" aria-live="polite">{{ toast.msg }}</div>
 
     <Transition name="splash">
@@ -72,3 +86,12 @@ onBeforeUnmount(() => { clearInterval(badgeTimer); document.removeEventListener(
     </Transition>
   </div>
 </template>
+<style>
+.maint { position: fixed; inset: 0; z-index: 400; display: grid; place-items: center; padding: 24px; background: var(--bg, #f4f6fb); }
+.maint-c { max-width: 380px; width: 100%; display: grid; gap: 12px; justify-items: center; text-align: center; }
+.maint-c img { width: 72px; height: 72px; border-radius: 20px; }
+.maint-c h1 { margin: 4px 0 0; font-size: 22px; font-weight: 800; color: var(--ink); }
+.maint-c p { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--ink-2); white-space: pre-line; }
+.maint-c small { font-size: 12.5px; color: var(--muted); font-weight: 700; }
+.maint-b { margin-top: 6px; min-height: 48px; padding: 0 28px; border: 0; border-radius: 14px; background: var(--accent); color: #fff; font-size: 15px; font-weight: 800; font-family: inherit; }
+</style>

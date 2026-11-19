@@ -19,6 +19,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Hak akses modul: bawaan config + perubahan dari Super Admin (tabel mobile_module_overrides).
+        \App\Services\ModuleRoles::terapkan();
     }
 }

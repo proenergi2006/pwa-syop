@@ -10,5 +10,7 @@ Artisan::command('inspire', function () {
 // Pantau approval baru dan kirim push (butuh cron: * * * * * php artisan schedule:run).
 Illuminate\Support\Facades\Schedule::command('orca:notify-waiting')->everyMinute()->withoutOverlapping(5);
 // Deteksi rilis versi baru aplikasi lalu beri tahu pengguna yang masih memakai versi lama (sekali per versi).
+// Detak scheduler: dibaca dasbor kesehatan untuk tahu scheduler masih berjalan.
+Illuminate\Support\Facades\Schedule::call(fn () => \App\Services\AppSettings::detak())->everyMinute()->name('detak');
 Illuminate\Support\Facades\Schedule::command('orca:kirim-pengumuman')->everyMinute()->withoutOverlapping(5);
 Illuminate\Support\Facades\Schedule::command('orca:cek-versi')->everyFiveMinutes()->withoutOverlapping(5);

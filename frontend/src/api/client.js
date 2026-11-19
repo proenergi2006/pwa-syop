@@ -25,6 +25,9 @@ api.interceptors.request.use((cfg) => {
   return cfg
 })
 
+let onMaintenance = () => {}
+export const setMaintenanceHandler = (fn) => (onMaintenance = fn)
+
 let onUnauthorized = () => {}
 export const setUnauthorizedHandler = (fn) => (onUnauthorized = fn)
 
@@ -34,6 +37,7 @@ api.interceptors.response.use(
     // 401 pada /auth/login berarti kredensial salah, bukan sesi habis.
     const isLogin = err.config?.url?.includes('/auth/login')
     if (err.response?.status === 401 && !isLogin) onUnauthorized()
+    if (err.response?.status === 503 && err.response?.data?.code === 'MAINTENANCE') onMaintenance(err.response.data.message, err.response.data.sampai)
     return Promise.reject(err)
   },
 )

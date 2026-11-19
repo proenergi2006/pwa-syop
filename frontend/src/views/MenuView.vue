@@ -44,6 +44,7 @@ const modules = [
   { key: 'forecast_bm', label: 'fo.title', icon: 'chart', to: 'forecast-bm', tone: 'teal', mod: 'forecast_bm' },
   { key: 'pengumuman', label: 'pg.title', icon: 'bell', to: 'pengumuman', tone: 'rose', mod: 'pengumuman' },
   { key: 'pengumuman_admin', label: 'pg.manage', icon: 'edit', to: 'pengumuman-admin', tone: 'indigo', mod: 'pengumuman_admin' },
+  { key: 'sistem', label: 'sys.title', icon: 'shield', to: 'sistem', tone: 'indigo', mod: 'sistem' },
   { key: 'kirim', label: 'mod.kirim', icon: 'truck', tone: 'orange' },
   { key: 'invoice', label: 'mod.invoice', icon: 'invoice', tone: 'rose' },
 ]
@@ -58,7 +59,7 @@ const has = (m) => !m || !Array.isArray(auth.user?.modules) || (Array.isArray(m)
 // OM/BM (hanya modul penawaran): menu lain, termasuk yang "segera hadir", disembunyikan.
 const limited = computed(() => {
   const mods = auth.user?.modules
-  return Array.isArray(mods) && mods.every((x) => ['penawaran', 'stok_terminal', 'reservasi', 'mobil', 'inventory', 'dr', 'trucking_dr', 'master', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'report', 'rssp', 'forecast_om', 'forecast_bm', 'rssp_input', 'pengumuman', 'pengumuman_admin'].includes(x))
+  return Array.isArray(mods) && mods.every((x) => ['penawaran', 'stok_terminal', 'reservasi', 'mobil', 'inventory', 'dr', 'trucking_dr', 'master', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'report', 'rssp', 'forecast_om', 'forecast_bm', 'rssp_input', 'pengumuman', 'pengumuman_admin', 'sistem'].includes(x))
 })
 const all = computed(() => [...modules, ...tools].filter((m) => (m.mod ? has(m.mod) : m.key === 'riwayat' ? has('penawaran') : !limited.value)))
 // Hanya yang sudah bisa dipakai tampil sebagai kartu; sisanya diringkas sebagai daftar "Segera hadir".

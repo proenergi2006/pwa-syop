@@ -17,6 +17,7 @@ const router = createRouter({
     { path: '/trucking/:id(\\d+)', name: 'trucking-detail', component: () => import('../views/TruckingDetailView.vue'), props: true, meta: { module: 'trucking' } },
     { path: '/verifikasi-oa', name: 'oa', component: () => import('../views/OaView.vue'), meta: { nav: true, module: 'oa' } },
     { path: '/verifikasi-oa/:id(\\d+)', name: 'oa-detail', component: () => import('../views/OaDetailView.vue'), props: true, meta: { module: 'oa' } },
+    { path: '/sistem', name: 'sistem', component: () => import('../views/SistemView.vue'), meta: { nav: true, module: 'sistem' } },
     { path: '/pengumuman', name: 'pengumuman', component: () => import('../views/PengumumanView.vue'), meta: { nav: true, module: 'pengumuman' } },
     { path: '/pengumuman/kelola', name: 'pengumuman-admin', component: () => import('../views/PengumumanAdminView.vue'), meta: { nav: true, module: 'pengumuman_admin' } },
     { path: '/forecast-bm', name: 'forecast-bm', component: () => import('../views/ForecastBmView.vue'), meta: { nav: true, module: 'forecast_bm' } },

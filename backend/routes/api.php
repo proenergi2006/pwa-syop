@@ -16,7 +16,9 @@ use App\Http\Controllers\MasterVendorController;
 use App\Http\Controllers\MobilController;
 use App\Http\Controllers\PoController;
 use App\Http\Controllers\LcrController;
+use App\Http\Controllers\AksesController;
 use App\Http\Controllers\PengumumanController;
+use App\Http\Controllers\SistemController;
 use App\Http\Controllers\PermohonanController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\ForecastController;
@@ -35,6 +37,20 @@ use App\Http\Controllers\PushController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
+
+    Route::get('status', [SistemController::class, 'status'])->middleware('throttle:60,1');
+
+    Route::middleware(['auth:sanctum', ModuleAccess::class.':sistem'])->prefix('sistem')->group(function () {
+        Route::get('kesehatan', [SistemController::class, 'kesehatan']);
+        Route::get('wajah', [SistemController::class, 'wajah']);
+        Route::delete('wajah/{id}', [SistemController::class, 'resetWajah'])->whereNumber('id')->middleware('throttle:30,1');
+        Route::get('log', [SistemController::class, 'log']);
+        Route::get('pengaturan', [SistemController::class, 'pengaturan']);
+        Route::put('pengaturan', [SistemController::class, 'simpanPengaturan'])->middleware('throttle:20,1');
+        Route::get('akses', [AksesController::class, 'index']);
+        Route::put('akses/{modul}', [AksesController::class, 'update'])->where('modul', '[a-z_]+')->middleware('throttle:30,1');
+        Route::delete('akses/{modul}', [AksesController::class, 'reset'])->where('modul', '[a-z_]+')->middleware('throttle:30,1');
+    });
 
     Route::prefix('auth')->group(function () {
         Route::post('login', [AuthController::class, 'login'])->middleware('throttle:10,1');

@@ -46,6 +46,7 @@ return [
         'rssp_input' => [5], // Input Report RSSP: Forecast Supply dan Forecast Sales Planning per terminal (Procurement/Purchasing)
         'rssp' => [5, 6, 21], // Report RSSP Fuel (stok, supply, sales harian): Purchasing, OM, dan CEO
         'oa' => [21], // Verifikasi Request Input OA: persetujuan CEO
+        'sistem' => [1], // Pusat Admin: kesehatan sistem, wajah login, log aktivitas, hak akses modul, pengaturan aplikasi (Super Admin)
         'pengumuman' => ['*'], // Pengumuman dari Super Admin: semua pengguna membaca
         'pengumuman_admin' => [1], // Kelola Pengumuman (tulis, rilis, hapus): Super Admin
         'forecast_bm' => [7], // Forecast Customer BM: isi forecast harian cabang sendiri, request tambahan qty ke OM
