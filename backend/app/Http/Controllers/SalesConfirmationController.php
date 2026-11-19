@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Concerns\StepUp;
 use App\Models\AclUser;
 use App\Services\ApprovalMail;
 use App\Services\LegacyFile;
@@ -20,8 +19,6 @@ use Illuminate\Support\Facades\DB;
  */
 class SalesConfirmationController extends Controller
 {
-    use StepUp;
-
     private const POSISI = [1 => 'Adm Finance', 2 => 'BM', 3 => 'OM', 4 => 'MGR Finance', 5 => 'CFO'];
     private const ROLE = [7 => 'BM', 6 => 'OM', 4 => 'CFO', 15 => 'MGR Finance'];
     private const TIPE_BISNIS = [
@@ -190,9 +187,6 @@ class SalesConfirmationController extends Controller
             return response()->json(['message' => 'Sales Confirmation tidak ditemukan.'], 404);
         }
         $d = $r->validate(['result' => 'required|in:1,2', 'summary' => 'required|string|max:5000']);
-        if ($resp = $this->stepUp($r)) {
-            return $resp;
-        }
         $u = $r->user();
         $res = (int) $d['result'];
         $note = str_replace(["\r\n", "\r", "\n"], '<br />', htmlspecialchars($d['summary'], ENT_QUOTES));

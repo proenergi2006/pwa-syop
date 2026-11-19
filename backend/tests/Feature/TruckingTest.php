@@ -131,11 +131,12 @@ class TruckingTest extends TestCase
         $this->assertSame(1, (int) $row->status);
     }
 
-    public function test_sesi_wajah_butuh_password_dan_yang_dibatalkan_ditolak(): void
+    public function test_sesi_wajah_tidak_butuh_password_dan_yang_dibatalkan_ditolak(): void
     {
         $this->as(21, ['face']);
         $id = $this->pending();
-        $this->postJson("/api/v1/trucking/$id/keputusan", ['keputusan' => 'approve'])->assertStatus(403)->assertJsonPath('code', 'STEP_UP_REQUIRED');
+        $id2 = $this->pending();
+        $this->postJson("/api/v1/trucking/$id2/keputusan", ['keputusan' => 'approve'])->assertOk();
 
         $this->as(21);
         DB::table(self::T)->where('id_master', $id)->update(['is_cancel' => 1]);

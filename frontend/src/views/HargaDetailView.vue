@@ -21,7 +21,7 @@ const delOpen = ref(false)
 const pwd = ref('')
 const busy = ref(false)
 const formError = ref('')
-const needPassword = computed(() => auth.method === 'face')
+const needPassword = computed(() => false) // tidak ada konfirmasi password di modul ini (hanya di Profil untuk wajah)
 // Catatan dari web berupa HTML (editor teks); tampilkan sebagai teks biasa.
 const note = computed(() => (d.value?.note_jual || '').replace(/<br\s*\/?>|<\/p>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim())
 

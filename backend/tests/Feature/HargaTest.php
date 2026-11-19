@@ -104,10 +104,10 @@ class HargaTest extends TestCase
             ->assertStatus(409)->assertJsonPath('code', 'IN_USE');
     }
 
-    public function test_sesi_wajah_butuh_password(): void
+    public function test_sesi_wajah_tidak_butuh_password(): void
     {
         $this->as(21, ['face']);
-        $this->postJson('/api/v1/harga', self::P + ['items' => [$this->item()]])->assertStatus(403)->assertJsonPath('code', 'STEP_UP_REQUIRED');
-        $this->assertFalse(DB::table(self::T)->where('periode_awal', '2031-01-01')->exists());
+        $this->postJson('/api/v1/harga', self::P + ['items' => [$this->item()]])->assertCreated();
+        $this->assertTrue(DB::table(self::T)->where('periode_awal', '2031-01-01')->exists());
     }
 }

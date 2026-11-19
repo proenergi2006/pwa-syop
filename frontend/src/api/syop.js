@@ -141,3 +141,13 @@ export const forecastApprove = (payload) => api.post('/forecast/periode/setujui'
 export const forecastReject = (payload) => api.post('/forecast/periode/tolak', payload).then((r) => r.data)
 export const forecastApproveRequest = (id, payload = {}) => api.post(`/forecast/request/${id}/setujui`, payload).then((r) => r.data)
 export const forecastRejectRequest = (id, payload) => api.post(`/forecast/request/${id}/tolak`, payload).then((r) => r.data)
+
+// Forecast Customer (OM)
+export const forecastOmCabang = () => api.get('/forecast-om/cabang').then((r) => r.data)
+export const forecastOmData = (params) => api.get('/forecast-om/data', { params }).then((r) => r.data)
+export const forecastOmCustomer = (params) => api.get('/forecast-om/customer', { params }).then((r) => r.data)
+export const forecastOmIsi = (payload) => api.post('/forecast-om/isi', payload).then((r) => r.data)
+export const forecastOmAjukan = (payload) => api.post('/forecast-om/ajukan', payload).then((r) => r.data)
+export const forecastOmMenunggu = () => api.get('/forecast-om/menunggu').then((r) => r.data)
+export const forecastOmRequests = (params = {}) => api.get('/forecast-om/request', { params }).then((r) => r.data)
+export const forecastOmDecide = (id, payload) => api.post(`/forecast-om/request/${id}/keputusan`, payload).then((r) => r.data)

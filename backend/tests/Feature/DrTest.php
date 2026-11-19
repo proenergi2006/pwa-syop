@@ -211,13 +211,13 @@ class DrTest extends TestCase
         $this->postJson("/api/v1/dr/$id/reset-split", ['id_prd' => $l['id_prd']])->assertStatus(409);
     }
 
-    public function test_sesi_wajah_butuh_password(): void
+    public function test_sesi_wajah_tidak_butuh_password(): void
     {
         $u = AclUser::where('id_role', 5)->where('is_active', 1)->firstOrFail();
         Sanctum::actingAs($u, ['face']);
         $id = $this->pending();
         $this->postJson("/api/v1/dr/$id/verifikasi", ['lines' => [['id_prd' => 1, 'volume' => 1, 'po' => ['id_po_supplier' => 1, 'id_po_receive' => 1, 'id_terminal' => 1]]]])
-            ->assertStatus(403)->assertJsonPath('code', 'STEP_UP_REQUIRED');
-        $this->postJson("/api/v1/dr/$id/kembali-dp")->assertStatus(403)->assertJsonPath('code', 'STEP_UP_REQUIRED');
+            ->assertJsonMissing(['code' => 'STEP_UP_REQUIRED']);
+        $this->postJson("/api/v1/dr/$id/kembali-dp")->assertJsonMissing(['code' => 'STEP_UP_REQUIRED']);
     }
 }

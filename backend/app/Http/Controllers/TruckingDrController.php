@@ -245,9 +245,6 @@ class TruckingDrController extends Controller
             'lines.*.split.po.id_terminal' => ['required_with:lines.*.split', 'integer'],
         ]);
 
-        if ($resp = $this->stepUp($request)) {
-            return $resp;
-        }
 
         return DB::transaction(function () use ($request, $id, $data) {
             $h = DB::table('pro_pr_trucking as a')->join('pro_master_cabang as b', 'a.id_wilayah', '=', 'b.id_master')->where('a.id_pr_ti', $id)
@@ -375,9 +372,6 @@ class TruckingDrController extends Controller
     /** Revisi DR: DR terverifikasi dikembalikan ke Pending Procurement (aksi revisiDR di web); stok dan split dilepas. */
     public function revise(Request $request, int $id): JsonResponse
     {
-        if ($resp = $this->stepUp($request)) {
-            return $resp;
-        }
 
         return DB::transaction(function () use ($id) {
             $h = DB::table('pro_pr_trucking')->where('id_pr_ti', $id)->lockForUpdate()->first();
@@ -404,9 +398,6 @@ class TruckingDrController extends Controller
     /** "Kembalikan Ke DP" (action/cek_status_dr_ti.php): detail dan DR dihapus, TI kembali status 1, baris rencana (pro_trucking_plan) dihapus agar Logistik membuat ulang. */
     public function returnToDp(Request $request, int $id): JsonResponse
     {
-        if ($resp = $this->stepUp($request)) {
-            return $resp;
-        }
 
         return DB::transaction(function () use ($id, $request) {
             $h = $this->header($id);
@@ -430,23 +421,4 @@ class TruckingDrController extends Controller
         });
     }
 
-    /** Konfirmasi password untuk sesi hasil login wajah sebelum menulis (menyangkut stok). Null = lolos. */
-    private function stepUp(Request $request): ?JsonResponse
-    {
-        $user = $request->user();
-        if ($user->tokenCan('*')) {
-            return null;
-        }
-        $password = (string) $request->input('password', '');
-        if ($password === '') {
-            return response()->json(['message' => 'Masukkan kata sandi untuk melanjutkan.', 'code' => 'STEP_UP_REQUIRED'], 403);
-        }
-        if (! \App\Services\PasswordGate::check($user, $password, $request)) {
-            return \App\Services\PasswordGate::locked($user)
-                ? response()->json(['message' => 'Terlalu banyak salah kata sandi. Coba lagi 15 menit lagi.', 'code' => 'PASSWORD_LOCKED'], 429)
-                : response()->json(['message' => 'Kata sandi salah.', 'code' => 'STEP_UP_FAILED'], 422);
-        }
-
-        return null;
-    }
 }

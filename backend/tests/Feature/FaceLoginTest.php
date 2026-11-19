@@ -192,7 +192,7 @@ class FaceLoginTest extends TestCase
         return $this->faceLogin($this->noisy($this->face(1)))->assertOk()->json('token');
     }
 
-    public function test_sesi_face_bisa_membaca_tapi_keputusan_butuh_password(): void
+    public function test_sesi_face_bisa_membaca_dan_memutuskan_tanpa_password(): void
     {
         $t = $this->faceToken();
         $this->app['auth']->forgetGuards();
@@ -201,32 +201,24 @@ class FaceLoginTest extends TestCase
         $this->withToken($t)->getJson('/api/v1/auth/me')->assertOk()->assertJsonPath('auth_method', 'face');
 
         $url = '/api/v1/penawaran/' . self::PNW . '/keputusan';
-        $this->withToken($t)->postJson($url, ['keputusan' => 'approve'])
-            ->assertStatus(403)->assertJsonPath('code', 'STEP_UP_REQUIRED');
-        $this->withToken($t)->postJson($url, ['keputusan' => 'approve', 'password' => 'salah'])
-            ->assertStatus(422)->assertJsonPath('code', 'STEP_UP_FAILED');
         $this->assertSame(0, (int) DB::table('pro_penawaran')->where('id_penawaran', self::PNW)->value('flag_approval'));
-
-        $this->withToken($t)->postJson($url, ['keputusan' => 'approve', 'password' => self::PWD])
-            ->assertOk()->assertJsonPath('final', true);
+        $this->withToken($t)->postJson($url, ['keputusan' => 'approve'])->assertOk()->assertJsonPath('final', true);
         $this->assertSame(1, (int) DB::table('pro_penawaran')->where('id_penawaran', self::PNW)->value('flag_approval'));
     }
 
-    public function test_password_gate_terkunci_setelah_5_salah(): void
+    /** Password tetap wajib di Profil: pendaftaran dan penghapusan wajah, dengan batas 5 kali salah. */
+    public function test_password_gate_profil_terkunci_setelah_5_salah(): void
     {
         $t = $this->faceToken();
         $this->app['auth']->forgetGuards();
-        $url = '/api/v1/penawaran/' . self::PNW . '/keputusan';
 
         for ($i = 0; $i < 4; $i++) {
-            $this->withToken($t)->postJson($url, ['keputusan' => 'approve', 'password' => 'salah'])->assertStatus(422);
+            $this->withToken($t)->deleteJson('/api/v1/face', ['password' => 'salah'])->assertStatus(422);
         }
         // percobaan salah ke-5 langsung memberi tahu bahwa akun terkunci
-        $this->withToken($t)->postJson($url, ['keputusan' => 'approve', 'password' => 'salah'])
-            ->assertStatus(429)->assertJsonPath('code', 'PASSWORD_LOCKED');
+        $this->withToken($t)->deleteJson('/api/v1/face', ['password' => 'salah'])->assertStatus(429)->assertJsonPath('code', 'PASSWORD_LOCKED');
         // setelah terkunci, password benar pun ditolak sampai masa tunggu habis
-        $this->withToken($t)->postJson($url, ['keputusan' => 'approve', 'password' => self::PWD])
-            ->assertStatus(429)->assertJsonPath('code', 'PASSWORD_LOCKED');
+        $this->withToken($t)->deleteJson('/api/v1/face', ['password' => self::PWD])->assertStatus(429)->assertJsonPath('code', 'PASSWORD_LOCKED');
     }
 
     public function test_sesi_password_biasa_tidak_butuh_langkah_tambahan(): void

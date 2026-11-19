@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Concerns\StepUp;
 use App\Services\ApprovalMail;
 use App\Services\HariLibur;
 use Illuminate\Http\JsonResponse;
@@ -22,8 +21,6 @@ use Illuminate\Support\Facades\Schema;
  */
 class ForecastController extends Controller
 {
-    use StepUp;
-
     private const NAMA_BULAN = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
     /** Baris approval TERAKHIR per cabang/bulan/tahun/periode. */
@@ -278,9 +275,6 @@ class ForecastController extends Controller
             'tahun'           => ['required', 'integer', 'between:2000,2100'],
             'catatan'         => ['nullable', 'string', 'max:2000'],
         ]);
-        if ($err = $this->stepUp($request)) {
-            return $err;
-        }
         $ok = 0;
         $dilewati = [];
         foreach ($data['items'] as $it) {
@@ -319,9 +313,6 @@ class ForecastController extends Controller
             'tahun'   => ['required', 'integer', 'between:2000,2100'],
             'alasan'  => ['required', 'string', 'max:2000'],
         ], ['alasan.required' => 'Alasan penolakan wajib diisi.']);
-        if ($err = $this->stepUp($request)) {
-            return $err;
-        }
         $a = DB::transaction(function () use ($data, $request) {
             $a = DB::table('pro_forecast_approval')->where('id_wilayah', $data['cabang'])->where('bulan', $data['bulan'])->where('tahun', $data['tahun'])
                 ->where('periode', $data['periode'])->orderByDesc('id_approval')->lockForUpdate()->first();
@@ -344,9 +335,6 @@ class ForecastController extends Controller
 
     public function approveRequest(Request $request, int $id): JsonResponse
     {
-        if ($err = $this->stepUp($request)) {
-            return $err;
-        }
         $req = DB::transaction(function () use ($id, $request) {
             $q = DB::table('pro_forecast_request as r')->join('pro_customer as c', 'c.id_customer', '=', 'r.id_customer')->where('r.id_request', $id)
                 ->lockForUpdate()->first(['r.*', 'c.nama_customer']);
@@ -378,9 +366,6 @@ class ForecastController extends Controller
     public function rejectRequest(Request $request, int $id): JsonResponse
     {
         $data = $request->validate(['alasan' => ['required', 'string', 'max:2000']], ['alasan.required' => 'Alasan penolakan wajib diisi.']);
-        if ($err = $this->stepUp($request)) {
-            return $err;
-        }
         $done = DB::transaction(function () use ($id, $data, $request) {
             $q = DB::table('pro_forecast_request')->where('id_request', $id)->lockForUpdate()->first();
             if (! $q || $q->status !== 'WAITING_CEO') {

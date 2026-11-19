@@ -28,7 +28,7 @@ const teruskan = ref(false)
 const submitting = ref(false)
 const formError = ref('')
 // Sesi hasil face login: server mewajibkan password untuk memutuskan penawaran.
-const needPassword = computed(() => auth.method === 'face')
+const needPassword = computed(() => false) // tidak ada konfirmasi password di modul ini (hanya di Profil untuk wajah)
 const pwd = ref('')
 
 // Tab: isi detail dipecah supaya tidak perlu menggulir panjang.

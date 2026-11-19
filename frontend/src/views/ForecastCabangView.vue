@@ -1,5 +1,5 @@
 <script setup>
-import { t } from '../i18n'
+import { t, numLocale } from '../i18n'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Icon from '../components/Icon.vue'
@@ -34,7 +34,7 @@ async function load() {
   try { d.value = await syop.forecastCabang({ cabang: props.id, bulan, tahun }) } catch (e) { error.value = errorMessage(e) } finally { loading.value = false }
 }
 const back = () => (window.history.length > 1 ? router.back() : router.replace({ name: 'forecast' }))
-const km = (n) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+const km = (n) => Number(n || 0).toLocaleString(numLocale.value, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
 const stCls = (s) => ({ WAITING: 'pill-wait', APPROVED: 'pill-ok', REJECTED: 'pill-no' })[s] || 'pill-draft'
 const stTxt = (s) => (s === 'WAITING' ? t('fc.waiting') : s === 'APPROVED' ? t('fc.approved') : s === 'REJECTED' ? t('fc.rejected') : t('fc.notSubmitted'))
 const range = (p) => (p === 1 ? t('fc.range', { a: 1, b: 14 }) : t('fc.range', { a: 15, b: d.value.jumlah_hari }))
@@ -53,7 +53,7 @@ const catatan = ref('')
 const pwd = ref('')
 const busy = ref(false)
 const formError = ref('')
-const needPassword = computed(() => auth.method === 'face')
+const needPassword = computed(() => false) // tidak ada konfirmasi password di modul ini (hanya di Profil untuk wajah)
 function open(type, p) { act.value = { type, periode: p }; catatan.value = ''; pwd.value = ''; formError.value = '' }
 async function submit() {
   const a = act.value

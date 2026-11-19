@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\PasswordGate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -69,26 +68,6 @@ class ProdukController extends Controller
         return $row ? response()->json($this->out($row, true)) : response()->json(['message' => 'Produk tidak ditemukan.'], 404);
     }
 
-    /** Sesi hasil login wajah wajib mengonfirmasi password sebelum menulis data master. Null = lolos. */
-    private function stepUp(Request $request): ?JsonResponse
-    {
-        $user = $request->user();
-        if ($user->tokenCan('*')) {
-            return null;
-        }
-        $password = (string) $request->input('password', '');
-        if ($password === '') {
-            return response()->json(['message' => 'Masukkan kata sandi untuk menyimpan perubahan.', 'code' => 'STEP_UP_REQUIRED'], 403);
-        }
-        if (! PasswordGate::check($user, $password, $request)) {
-            return PasswordGate::locked($user)
-                ? response()->json(['message' => 'Terlalu banyak salah kata sandi. Coba lagi 15 menit lagi.', 'code' => 'PASSWORD_LOCKED'], 429)
-                : response()->json(['message' => 'Kata sandi salah.', 'code' => 'STEP_UP_FAILED'], 422);
-        }
-
-        return null;
-    }
-
     private function input(Request $r): array
     {
         return $r->validate([
@@ -115,9 +94,6 @@ class ProdukController extends Controller
     public function store(Request $r): JsonResponse
     {
         $d = $this->input($r);
-        if ($resp = $this->stepUp($r)) {
-            return $resp;
-        }
         $c = $this->cols($d);
         $id = DB::table(self::T)->insertGetId($c + ['created_time' => now(), 'created_ip' => $r->ip(), 'created_by' => $r->user()->fullname]);
 
@@ -130,9 +106,6 @@ class ProdukController extends Controller
             return response()->json(['message' => 'Produk tidak ditemukan.'], 404);
         }
         $d = $this->input($r);
-        if ($resp = $this->stepUp($r)) {
-            return $resp;
-        }
         $c = $this->cols($d);
         DB::table(self::T)->where('id_master', $id)->update($c + ['lastupdate_time' => now(), 'lastupdate_ip' => $r->ip(), 'lastupdate_by' => $r->user()->fullname]);
 

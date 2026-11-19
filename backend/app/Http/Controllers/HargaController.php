@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\PasswordGate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -99,26 +98,6 @@ class HargaController extends Controller
         return response()->json($out);
     }
 
-    /** Konfirmasi password untuk sesi hasil login wajah (menyangkut harga jual). Null = lolos. */
-    private function stepUp(Request $request): ?JsonResponse
-    {
-        $user = $request->user();
-        if ($user->tokenCan('*')) {
-            return null;
-        }
-        $password = (string) $request->input('password', '');
-        if ($password === '') {
-            return response()->json(['message' => 'Masukkan kata sandi untuk menyimpan perubahan harga.', 'code' => 'STEP_UP_REQUIRED'], 403);
-        }
-        if (! PasswordGate::check($user, $password, $request)) {
-            return PasswordGate::locked($user)
-                ? response()->json(['message' => 'Terlalu banyak salah kata sandi. Coba lagi 15 menit lagi.', 'code' => 'PASSWORD_LOCKED'], 429)
-                : response()->json(['message' => 'Kata sandi salah.', 'code' => 'STEP_UP_FAILED'], 422);
-        }
-
-        return null;
-    }
-
     private static function priceRules(string $p): array
     {
         $max = 'max:2000000000';
@@ -142,9 +121,6 @@ class HargaController extends Controller
             'items.*.area'   => ['required', 'integer'],
             'items.*.produk' => ['required', 'integer'],
         ] + self::priceRules('items.*'));
-        if ($resp = $this->stepUp($request)) {
-            return $resp;
-        }
 
         $seen = [];
         foreach ($data['items'] as $i => $it) {
@@ -188,9 +164,6 @@ class HargaController extends Controller
     {
         [$awal, $akhir, $area, $produk] = $this->key($request);
         $h = $request->validate(['h' => ['required', 'array']] + self::priceRules('h'))['h'];
-        if ($resp = $this->stepUp($request)) {
-            return $resp;
-        }
         $n = DB::table(self::T)->where('periode_awal', $awal)->where('periode_akhir', $akhir)->where('id_area', $area)->where('produk', $produk)->where('pajak', self::PAJAK)
             ->update([
                 'harga_normal' => $h['normal'], 'harga_sm' => $h['sm'], 'harga_om' => $h['om'], 'harga_coo' => $h['coo'] ?? 0, 'harga_ceo' => $h['ceo'] ?? 0,
@@ -207,9 +180,6 @@ class HargaController extends Controller
     public function destroy(Request $request): JsonResponse
     {
         [$awal, $akhir, $area, $produk] = $this->key($request);
-        if ($resp = $this->stepUp($request)) {
-            return $resp;
-        }
         if (self::dipakai($awal, $akhir, $area, $produk) > 0) {
             return response()->json(['message' => 'Harga ini sudah dipakai pada penawaran dan tidak bisa dihapus.', 'code' => 'IN_USE'], 409);
         }

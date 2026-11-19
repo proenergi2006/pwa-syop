@@ -21,7 +21,7 @@ const error = ref('')
 const busy = ref(false)
 const formError = ref('')
 const submitted = ref(false)
-const needPassword = computed(() => auth.method === 'face')
+const needPassword = computed(() => false) // tidak ada konfirmasi password di modul ini (hanya di Profil untuk wajah)
 
 onMounted(async () => {
   if (!editing) return

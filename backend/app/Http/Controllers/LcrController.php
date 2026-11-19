@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Concerns\StepUp;
 use App\Models\AclUser;
 use App\Services\LegacyFile;
 use Illuminate\Http\JsonResponse;
@@ -17,8 +16,6 @@ use Illuminate\Support\Facades\DB;
  */
 class LcrController extends Controller
 {
-    use StepUp;
-
     private const GAMBAR = [
         'jalan' => ['1. Kondisi Jalan Menuju Lokasi', 'kondisi_jalan'], 'kantor' => ['2. Pintu Gerbang & Kantor Perusahaan', 'kantor_perusahaan'],
         'storage' => ['3. Fasilitas Penyimpanan', 'fasilitas_storage'], 'inlet' => ['4. Inlet Pipa', 'inlet_pipa'], 'ukur' => ['5. Alat Ukur', 'alat_ukur_gambar'],
@@ -202,9 +199,6 @@ class LcrController extends Controller
             return response()->json(['message' => 'Data LCR tidak ditemukan.'], 404);
         }
         $d = $r->validate(['result' => 'required|in:1,2', 'summary' => 'required|string|max:5000']);
-        if ($resp = $this->stepUp($r)) {
-            return $resp;
-        }
         $u = $r->user();
         $res = (int) $d['result'];
         $summary = str_replace(["\r\n", "\r", "\n"], '<br />', htmlspecialchars($d['summary'], ENT_QUOTES));

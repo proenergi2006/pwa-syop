@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Concerns\StepUp;
 use App\Models\AclUser;
 use App\Services\ApprovalMail;
 use App\Services\LegacyFile;
@@ -18,8 +17,6 @@ use Illuminate\Support\Facades\DB;
  */
 class PermohonanController extends Controller
 {
-    use StepUp;
-
     private const KATEGORI = [
         1 => 'Perubahan Credit Limit', 2 => 'Perubahan TOP', 3 => 'Perubahan Data', 4 => 'Perubahan Credit Limit & Data Customer',
         5 => 'Perubahan TOP & Data Customer', 6 => 'Perubahan Credit Limit & TOP', 7 => 'Perubahan Credit Limit & TOP & Data Customer',
@@ -151,9 +148,6 @@ class PermohonanController extends Controller
             return response()->json(['message' => 'Data permohonan tidak ditemukan.'], 404);
         }
         $d = $r->validate(['result' => 'required|in:1,2', 'summary' => 'required|string|max:5000']);
-        if ($resp = $this->stepUp($r)) {
-            return $resp;
-        }
         $u = $r->user();
         $res = (int) $d['result'];
         $summary = str_replace(["\r\n", "\r", "\n"], '<br />', htmlspecialchars($d['summary'], ENT_QUOTES));

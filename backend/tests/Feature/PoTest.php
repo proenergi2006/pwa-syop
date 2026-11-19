@@ -126,11 +126,11 @@ class PoTest extends TestCase
         $this->assertSame(1, (int) $po->revert_ceo);
     }
 
-    public function test_sesi_wajah_butuh_password(): void
+    public function test_sesi_wajah_tidak_butuh_password(): void
     {
         $this->as(21, ['face']);
         $id = $this->pending();
-        $this->postJson("/api/v1/po/$id/keputusan", ['keputusan' => 'approve'])->assertStatus(403)->assertJsonPath('code', 'STEP_UP_REQUIRED');
+        $this->postJson("/api/v1/po/$id/keputusan", ['keputusan' => 'approve'])->assertOk();
     }
 
     public function test_po_yang_belum_lewat_cfo_tidak_bisa_diputuskan(): void

@@ -334,9 +334,6 @@ class DrController extends Controller
             'lines.*.split.po.id_terminal' => ['required_with:lines.*.split', 'integer'],
         ]);
 
-        if ($resp = $this->stepUp($request)) {
-            return $resp;
-        }
 
         try {
             return DB::transaction(function () use ($request, $id, $data) {
@@ -507,9 +504,6 @@ class DrController extends Controller
     /** Revisi DR: DR terverifikasi dikembalikan ke Verifikasi Purchasing (aksi revisiDR di web), stok virtual dan split dilepas. */
     public function revise(Request $request, int $id): JsonResponse
     {
-        if ($resp = $this->stepUp($request)) {
-            return $resp;
-        }
 
         try {
             return DB::transaction(function () use ($id) {
@@ -539,32 +533,9 @@ class DrController extends Controller
         }
     }
 
-    /** Konfirmasi password untuk sesi hasil login wajah sebelum menulis (data DR menyangkut stok dan harga beli). Null = lolos. */
-    private function stepUp(Request $request): ?JsonResponse
-    {
-        $user = $request->user();
-        if ($user->tokenCan('*')) {
-            return null;
-        }
-        $password = (string) $request->input('password', '');
-        if ($password === '') {
-            return response()->json(['message' => 'Masukkan kata sandi untuk melanjutkan.', 'code' => 'STEP_UP_REQUIRED'], 403);
-        }
-        if (! \App\Services\PasswordGate::check($user, $password, $request)) {
-            return \App\Services\PasswordGate::locked($user)
-                ? response()->json(['message' => 'Terlalu banyak salah kata sandi. Coba lagi 15 menit lagi.', 'code' => 'PASSWORD_LOCKED'], 429)
-                : response()->json(['message' => 'Kata sandi salah.', 'code' => 'STEP_UP_FAILED'], 422);
-        }
-
-        return null;
-    }
-
     /** "Kembalikan Ke DP" (action/cek_status_dr_pr.php): DR dihapus dan rencana kirim (DP) kembali ke Logistik (status_plan = 0). */
     public function returnToDp(Request $request, int $id): JsonResponse
     {
-        if ($resp = $this->stepUp($request)) {
-            return $resp;
-        }
 
         return DB::transaction(function () use ($id, $request) {
             $h = $this->header($id);
@@ -594,9 +565,6 @@ class DrController extends Controller
     public function resetSplit(Request $request, int $id): JsonResponse
     {
         $data = $request->validate(['id_prd' => ['required', 'integer']]);
-        if ($resp = $this->stepUp($request)) {
-            return $resp;
-        }
 
         return DB::transaction(function () use ($id, $data) {
             $h = $this->header($id);

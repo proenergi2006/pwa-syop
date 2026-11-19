@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Http\Controllers\DrController;
 use App\Http\Controllers\ForecastController;
+use App\Http\Controllers\ForecastOmController;
 use App\Http\Controllers\LcrController;
 use App\Http\Controllers\PermohonanController;
 use App\Http\Controllers\PoController;
@@ -20,7 +21,7 @@ use App\Models\AclUser;
 /** Jumlah item yang menunggu keputusan satu user, per modul (hanya modul yang boleh dipakai perannya). Dipakai /badges dan notifikasi push. */
 class WaitingCounts
 {
-    public const MODULES = ['penawaran', 'po', 'shipping', 'trucking', 'dr', 'trucking_dr', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'oa', 'forecast', 'forecast_request'];
+    public const MODULES = ['penawaran', 'po', 'shipping', 'trucking', 'dr', 'trucking_dr', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'oa', 'forecast', 'forecast_request', 'forecast_om', 'forecast_revisi'];
 
     /** Item yang menunggu per modul: id => kode dokumen (hanya modul yang boleh dipakai perannya). */
     public static function items(AclUser $user): array
@@ -43,10 +44,12 @@ class WaitingCounts
             'oa' => $can('oa') ? app(RequestOaController::class)->waitingItems() : [],
             'forecast' => $can('forecast') ? app(ForecastController::class)->waitingItems() : [],
             'forecast_request' => $can('forecast') ? app(ForecastController::class)->waitingRequestItems() : [],
+            'forecast_om' => $can('forecast_om') ? app(ForecastOmController::class)->waitingItems() : [],
+            'forecast_revisi' => $can('forecast_om') ? app(ForecastOmController::class)->revisiItems() : [],
         ];
     }
 
-    /** @return array{penawaran:int,po:int,shipping:int,trucking:int,dr:int,trucking_dr:int,verifikasi_customer:int,refund:int,permohonan:int,lcr:int,sc:int,oa:int,forecast:int,forecast_request:int} */
+    /** @return array{penawaran:int,po:int,shipping:int,trucking:int,dr:int,trucking_dr:int,verifikasi_customer:int,refund:int,permohonan:int,lcr:int,sc:int,oa:int,forecast:int,forecast_request:int,forecast_om:int,forecast_revisi:int} */
     public static function for(AclUser $user): array
     {
         $role = (int) $user->id_role;
@@ -67,6 +70,8 @@ class WaitingCounts
             'oa' => $can('oa') ? app(RequestOaController::class)->waitingCount() : 0,
             'forecast' => $can('forecast') ? app(ForecastController::class)->waitingCount() : 0,
             'forecast_request' => $can('forecast') ? app(ForecastController::class)->waitingRequestCount() : 0,
+            'forecast_om' => $can('forecast_om') ? app(ForecastOmController::class)->waitingCount() : 0,
+            'forecast_revisi' => $can('forecast_om') ? app(ForecastOmController::class)->revisiCount() : 0,
         ];
     }
 }

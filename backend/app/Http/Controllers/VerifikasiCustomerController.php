@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Concerns\StepUp;
 use App\Models\AclUser;
 use App\Services\Accurate\AccurateClient;
 use App\Services\ApprovalMail;
@@ -24,8 +23,6 @@ use Illuminate\Support\Facades\DB;
  */
 class VerifikasiCustomerController extends Controller
 {
-    use StepUp;
-
     private const POSISI = [2 => 'BM', 3 => 'OM', 4 => 'CFO', 5 => 'CEO', 6 => 'MGR Finance'];
     private const ROLE = [7 => 'BM', 6 => 'OM', 3 => 'CEO', 4 => 'CFO', 15 => 'MGR Finance'];
     private const TIPE_BISNIS = [
@@ -353,9 +350,6 @@ class VerifikasiCustomerController extends Controller
             return response()->json(['message' => 'Data verifikasi tidak ditemukan.'], 404);
         }
         $d = $r->validate(['result' => 'required|in:1,2', 'summary' => 'required|string|max:5000']);
-        if ($resp = $this->stepUp($r)) {
-            return $resp;
-        }
         $u = $r->user();
         $role = (int) $u->id_role;
         $col = $role === 7 ? 'sm' : 'om';

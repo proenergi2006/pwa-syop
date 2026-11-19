@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Concerns\StepUp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,8 +14,6 @@ use Illuminate\Support\Facades\DB;
  */
 class MasterTerminalController extends Controller
 {
-    use StepUp;
-
     private const KATEGORI = [1 => 'Depo', 2 => 'Dispenser', 3 => 'Truck Gantung'];
 
     private static function esc(?string $s): string
@@ -140,9 +137,6 @@ class MasterTerminalController extends Controller
     public function store(Request $r): JsonResponse
     {
         $d = $this->input($r);
-        if ($resp = $this->stepUp($r)) {
-            return $resp;
-        }
         $id = DB::transaction(function () use ($r, $d) {
             $id = DB::table('pro_master_terminal')->insertGetId($this->cols($d) + ['id_area' => 0, 'created_time' => now(), 'created_ip' => (string) $r->ip(), 'created_by' => $r->user()->fullname]);
             $this->docs($id, $d);
@@ -159,9 +153,6 @@ class MasterTerminalController extends Controller
             return response()->json(['message' => 'Terminal tidak ditemukan.'], 404);
         }
         $d = $this->input($r);
-        if ($resp = $this->stepUp($r)) {
-            return $resp;
-        }
         DB::transaction(function () use ($r, $id, $d) {
             DB::table('pro_master_terminal')->where('id_master', $id)->update($this->cols($d) + ['lastupdate_time' => now(), 'lastupdate_ip' => (string) $r->ip(), 'lastupdate_by' => $r->user()->fullname]);
             $this->docs($id, $d);

@@ -37,7 +37,7 @@ bukan localhost. Jangan arahkan ke database produksi.
 - Face Recognition 1:1 (username dulu, lalu wajah): embedding 128 angka dari face-api di perangkat, dicocokkan
   di server (`config/orca.php` -> `face.threshold`, bawaan 0.45; WAJIB ditala dengan pengguna nyata).
   Template dienkripsi (APP_KEY; jangan ganti APP_KEY tanpa pendaftaran ulang). Daftar/hapus wajah wajib password.
-  Gagal 5x -> terkunci 15 menit. Sesi hasil face login hanya bisa membaca; setujui/tolak wajib password.
+  Gagal 5x -> terkunci 15 menit. Sesi hasil face login setara sesi password untuk semua modul (tanpa konfirmasi password tambahan); password hanya wajib di Profil untuk mendaftar/menghapus wajah.
   Kamera butuh HTTPS (localhost dikecualikan). Uji tanpa kamera: `VITE_FACE_MOCK=1 npm run dev` (jangan dipakai di produksi).
 - Email notifikasi memakai Laravel Mail; isi `MAIL_*` di `backend/.env` untuk SMTP.
 

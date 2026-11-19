@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Services\Accurate\AccurateException;
 use App\Services\ApprovalMail;
 use App\Services\Accurate\AccuratePoSync;
-use App\Services\PasswordGate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -144,17 +143,7 @@ class PoController extends Controller
         ]);
 
         $user = $request->user();
-        if (! $user->tokenCan('*')) {
-            $password = (string) $request->input('password', '');
-            if ($password === '') {
-                return response()->json(['message' => 'Masukkan kata sandi untuk memutuskan.', 'code' => 'STEP_UP_REQUIRED'], 403);
-            }
-            if (! PasswordGate::check($user, $password, $request)) {
-                return PasswordGate::locked($user)
-                    ? response()->json(['message' => 'Terlalu banyak salah kata sandi. Coba lagi 15 menit lagi.', 'code' => 'PASSWORD_LOCKED'], 429)
-                    : response()->json(['message' => 'Kata sandi salah.', 'code' => 'STEP_UP_FAILED'], 422);
-            }
-        }
+
         if ($data['keputusan'] === 'return' && trim((string) ($data['catatan'] ?? '')) === '') {
             return response()->json(['message' => 'Catatan pengembalian wajib diisi.', 'code' => 'NOTE_REQUIRED'], 422);
         }

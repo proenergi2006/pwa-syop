@@ -266,17 +266,15 @@ class ForecastTest extends TestCase
         $this->postJson("/api/v1/forecast/request/$id/tolak", ['alasan' => 'lagi'])->assertStatus(409);
     }
 
-    public function test_sesi_wajah_wajib_konfirmasi_password(): void
+    public function test_sesi_wajah_tidak_perlu_konfirmasi_password(): void
     {
         $this->as(21, ['read']);
         $cab = $this->cabang();
         $id = $this->approval($cab, 1);
         $req = $this->request($this->customer($cab));
-        $body = ['items' => [['cabang' => $cab, 'periode' => 1]], 'bulan' => self::B, 'tahun' => self::Y];
-        $this->postJson('/api/v1/forecast/periode/setujui', $body)->assertForbidden()->assertJsonPath('code', 'STEP_UP_REQUIRED');
-        $this->postJson("/api/v1/forecast/request/$req/setujui")->assertForbidden()->assertJsonPath('code', 'STEP_UP_REQUIRED');
-        $this->postJson('/api/v1/forecast/periode/setujui', $body + ['password' => 'salah-total'])->assertStatus(422)->assertJsonPath('code', 'STEP_UP_FAILED');
-        $this->assertSame('WAITING', DB::table('pro_forecast_approval')->where('id_approval', $id)->value('status'));
+        $this->postJson('/api/v1/forecast/periode/setujui', ['items' => [['cabang' => $cab, 'periode' => 1]], 'bulan' => self::B, 'tahun' => self::Y])->assertOk();
+        $this->postJson("/api/v1/forecast/request/$req/setujui")->assertOk();
+        $this->assertSame('APPROVED', DB::table('pro_forecast_approval')->where('id_approval', $id)->value('status'));
     }
 
     public function test_badge_dan_item_menunggu_untuk_periode_dan_request(): void

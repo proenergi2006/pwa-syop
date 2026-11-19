@@ -29,7 +29,7 @@ const busy = ref(false)
 const formError = ref('')
 const c = computed(() => d.value.customer)
 const r = computed(() => d.value.review)
-const needPassword = computed(() => auth.method === 'face')
+const needPassword = computed(() => false) // tidak ada konfirmasi password di modul ini (hanya di Profil untuk wajah)
 
 async function load() {
   loading.value = true

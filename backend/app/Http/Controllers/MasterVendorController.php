@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Concerns\StepUp;
 use App\Services\Accurate\AccurateClient;
 use App\Services\Accurate\AccurateException;
 use Illuminate\Http\JsonResponse;
@@ -18,8 +17,6 @@ use Illuminate\Support\Facades\DB;
  */
 class MasterVendorController extends Controller
 {
-    use StepUp;
-
     private static function esc(?string $s): string
     {
         return htmlspecialchars(trim((string) $s), ENT_QUOTES);
@@ -118,9 +115,6 @@ class MasterVendorController extends Controller
     public function store(Request $r, AccurateClient $api): JsonResponse
     {
         $d = $this->input($r);
-        if ($resp = $this->stepUp($r)) {
-            return $resp;
-        }
         $nama = self::esc($d['nama']);
         $kode = 'V-'.self::esc($d['kode']);
         try {
@@ -151,9 +145,6 @@ class MasterVendorController extends Controller
             return response()->json(['message' => 'Vendor tidak ditemukan.'], 404);
         }
         $d = $this->input($r);
-        if ($resp = $this->stepUp($r)) {
-            return $resp;
-        }
         $nama = self::esc($d['nama']);
         $kode = 'V-'.self::esc($d['kode']);
         $inisial = self::esc($d['inisial']);

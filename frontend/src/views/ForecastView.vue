@@ -1,5 +1,5 @@
 <script setup>
-import { t } from '../i18n'
+import { t, numLocale } from '../i18n'
 import { useScrolled } from '../composables/useScrolled'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -38,7 +38,7 @@ function geser(n) {
   tahun.value = Math.floor(i / 12)
   bulan.value = (i % 12) + 1
 }
-const km = (n) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+const km = (n) => Number(n || 0).toLocaleString(numLocale.value, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
 
 async function load(silent = false) {
   const my = ++seq
@@ -71,7 +71,7 @@ const catatan = ref('')
 const pwd = ref('')
 const busy = ref(false)
 const formError = ref('')
-const needPassword = computed(() => auth.method === 'face')
+const needPassword = computed(() => false) // tidak ada konfirmasi password di modul ini (hanya di Profil untuk wajah)
 function openPeriode(type, c, periods) {
   act.value = { kind: 'periode', type, items: periods.map((p) => ({ cabang: c.id, periode: p })), nama: c.nama }
   reset()

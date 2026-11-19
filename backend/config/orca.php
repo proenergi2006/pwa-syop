@@ -45,6 +45,7 @@ return [
         'report' => [6, 21], // Menu Report + Report Marketing (volume, customer aktif, customer baru, kegiatan): OM dan CEO
         'rssp' => [6, 21], // Report RSSP Fuel (stok, supply, sales harian): OM dan CEO
         'oa' => [21], // Verifikasi Request Input OA: persetujuan CEO
+        'forecast_om' => [6], // Forecast Customer OM: isi forecast harian, ajukan ke CEO, setujui/tolak request qty dari BM
         'forecast' => [21], // Verifikasi Forecast cabang per periode dan request tambahan qty: persetujuan CEO
         'mobil' => ['*'], // Peminjaman mobil: semua peran, mobil sesuai cabang pengguna
         'reservasi' => ['*'], // Reservasi ruangan: semua peran, ruangan sesuai cabang pengguna

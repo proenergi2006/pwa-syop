@@ -202,13 +202,12 @@ class RequestOaTest extends TestCase
         $this->postJson("/api/v1/request-oa/$id/keputusan", ['keputusan' => 'x'])->assertStatus(422);
     }
 
-    public function test_sesi_wajah_wajib_konfirmasi_password(): void
+    public function test_sesi_wajah_tidak_perlu_konfirmasi_password(): void
     {
         $this->as(21, ['read']);
         $id = $this->pending();
-        $this->postJson("/api/v1/request-oa/$id/keputusan", ['keputusan' => 'approve'])->assertForbidden()->assertJsonPath('code', 'STEP_UP_REQUIRED');
-        $this->postJson("/api/v1/request-oa/$id/keputusan", ['keputusan' => 'approve', 'password' => 'salah-total'])->assertStatus(422)->assertJsonPath('code', 'STEP_UP_FAILED');
-        $this->assertSame(3, (int) DB::table('pro_po_request_oa')->where('id_master', $id)->value('status'));
+        $this->postJson("/api/v1/request-oa/$id/keputusan", ['keputusan' => 'approve'])->assertOk();
+        $this->assertSame(4, (int) DB::table('pro_po_request_oa')->where('id_master', $id)->value('status'));
     }
 
     public function test_badge_dan_item_menunggu(): void

@@ -59,9 +59,9 @@ class ProdukTest extends TestCase
         $this->getJson('/api/v1/produk/99999999')->assertStatus(404);
     }
 
-    public function test_sesi_wajah_butuh_password(): void
+    public function test_sesi_wajah_tidak_butuh_password(): void
     {
         $this->as(21, ['face']);
-        $this->postJson('/api/v1/produk', ['jenis' => 'X', 'merk' => 'Y', 'aktif' => true])->assertStatus(403)->assertJsonPath('code', 'STEP_UP_REQUIRED');
+        $this->postJson('/api/v1/produk', ['jenis' => 'X', 'merk' => 'Y', 'aktif' => true])->assertCreated();
     }
 }

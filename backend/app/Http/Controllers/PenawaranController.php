@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Services\ApprovalException;
-use App\Services\PasswordGate;
 use App\Services\PenawaranApprovalService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -68,21 +67,6 @@ class PenawaranController extends Controller
         // Sesi hasil face login hanya boleh membaca. Memutuskan penawaran (menyangkut uang)
         // wajib konfirmasi password; kamera di browser belum setara Face ID.
         $user = $request->user();
-        if (! $user->tokenCan('*')) {
-            $password = (string) $request->input('password', '');
-            if ($password === '') {
-                return response()->json([
-                    'message' => 'Masukkan kata sandi untuk memutuskan penawaran.',
-                    'code'    => 'STEP_UP_REQUIRED',
-                ], 403);
-            }
-            if (! PasswordGate::check($user, $password, $request)) {
-                return PasswordGate::locked($user)
-                    ? response()->json(['message' => 'Terlalu banyak salah kata sandi. Coba lagi 15 menit lagi.', 'code' => 'PASSWORD_LOCKED'], 429)
-                    : response()->json(['message' => 'Kata sandi salah.', 'code' => 'STEP_UP_FAILED'], 422);
-            }
-        }
-
         try {
             $result = $this->svc->decide(
                 $request->user(),

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Concerns\StepUp;
 use App\Models\AclUser;
 use App\Services\ApprovalMail;
 use App\Services\LegacyFile;
@@ -18,8 +17,6 @@ use Illuminate\Support\Facades\DB;
  */
 class RefundPenerimaController extends Controller
 {
-    use StepUp;
-
     private function base(AclUser $u)
     {
         $q = DB::table('pro_master_penerima_refund as a')->join('pro_customer as b', 'a.id_customer', '=', 'b.id_customer')->join('acl_user as c', 'b.id_marketing', '=', 'c.id_user');
@@ -134,9 +131,6 @@ class RefundPenerimaController extends Controller
             return response()->json(['message' => 'Data penerima refund tidak ditemukan.'], 404);
         }
         $d = $r->validate(['result' => 'required|in:1,2', 'catatan' => 'nullable|string|max:1000']);
-        if ($resp = $this->stepUp($r)) {
-            return $resp;
-        }
         $u = $r->user();
         $bm = (int) $u->id_role === 7;
         $res = (int) $d['result'];
