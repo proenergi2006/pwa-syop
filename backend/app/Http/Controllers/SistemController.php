@@ -6,6 +6,7 @@ use App\Services\AppSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Pusat Admin (Super Admin): kesehatan sistem, wajah login pengguna, log aktivitas, dan pengaturan aplikasi (mode pemeliharaan).
@@ -144,6 +145,17 @@ class SistemController extends Controller
         $sampai = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $r->query('sampai')) ? $r->query('sampai').' 23:59:59' : null;
         $per = $this->perPage($r);
 
+        try {
+            return $this->logQuery($jenis, $q, $dari, $sampai, $per, $r);
+        } catch (\Illuminate\Database\QueryException $e) {
+            report($e); // skema tabel log lama di server berbeda: jangan 500
+
+            return $this->logKosong($jenis);
+        }
+    }
+
+    private function logQuery(string $jenis, string $q, ?string $dari, ?string $sampai, int $per, Request $r): JsonResponse
+    {
         if ($jenis === 'login') {
             $page = DB::table('mobile_auth_log as a')->leftJoin('acl_user as u', 'u.id_user', '=', 'a.id_user')
                 ->when($q !== '', fn ($w) => $w->where(fn ($x) => $x->where('u.fullname', 'like', "%$q%")->orWhere('a.username', 'like', "%$q%")))
@@ -155,6 +167,10 @@ class SistemController extends Controller
                 'detail' => trim('IP '.$x->ip.($x->distance !== null ? ' · jarak '.round((float) $x->distance, 3) : '')), 'gagal' => str_ends_with($x->event, 'fail'),
             ]);
         } elseif ($jenis === 'persetujuan') {
+            // Tabel ini peninggalan backend lama dan tidak ditulis aplikasi sekarang; di server bisa tidak ada / skemanya berbeda.
+            if (! Schema::hasTable('mobile_approval_log')) {
+                return $this->logKosong($jenis);
+            }
             $page = DB::table('mobile_approval_log as l')->leftJoin('acl_user as u', 'u.id_user', '=', 'l.user_id')
                 ->when($q !== '', fn ($w) => $w->where('u.fullname', 'like', "%$q%"))
                 ->when($dari, fn ($w) => $w->where('l.created_at', '>=', $dari))->when($sampai, fn ($w) => $w->where('l.created_at', '<=', $sampai))
@@ -165,6 +181,9 @@ class SistemController extends Controller
                 'detail' => 'Status '.$x->before_status.' → '.$x->after_status.($x->notes ? ' · '.mb_substr(trim(strip_tags((string) $x->notes)), 0, 120) : ''), 'gagal' => $x->action === 'reject',
             ]);
         } else {
+            if (! Schema::hasTable('mobile_notification_log')) {
+                return $this->logKosong($jenis);
+            }
             $page = DB::table('mobile_notification_log as n')->leftJoin('acl_user as u', 'u.id_user', '=', 'n.user_id')
                 ->when($q !== '', fn ($w) => $w->where('u.fullname', 'like', "%$q%"))
                 ->when($dari, fn ($w) => $w->where('n.created_at', '>=', $dari))->when($sampai, fn ($w) => $w->where('n.created_at', '<=', $sampai))
@@ -176,6 +195,11 @@ class SistemController extends Controller
         }
 
         return response()->json(['jenis' => $jenis, 'data' => $rows->values()->all(), 'meta' => self::meta($page)]);
+    }
+
+    private function logKosong(string $jenis): JsonResponse
+    {
+        return response()->json(['jenis' => $jenis, 'data' => [], 'tersedia' => false, 'meta' => ['page' => 1, 'per_page' => 30, 'total' => 0, 'last' => 1]]);
     }
 
     // ---------- pengaturan ----------

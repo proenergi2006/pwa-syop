@@ -7,7 +7,7 @@ import { errorMessage } from '../../api/client'
 import { tanggalJam } from '../../utils/format'
 
 const JENIS = ['login', 'persetujuan', 'notifikasi']
-const s = reactive({ jenis: 'login', q: '', dari: '', sampai: '', gagal: false, data: [], meta: { page: 1, last: 1, total: 0 }, loading: true, more: false, error: '' })
+const s = reactive({ tersedia: true, jenis: 'login', q: '', dari: '', sampai: '', gagal: false, data: [], meta: { page: 1, last: 1, total: 0 }, loading: true, more: false, error: '' })
 async function load(page = 1) {
   page === 1 ? (s.loading = true) : (s.more = true)
   s.error = ''
@@ -15,6 +15,7 @@ async function load(page = 1) {
     const r = await syop.sistemLog({ jenis: s.jenis, page, per_page: 30, q: s.q || undefined, dari: s.dari || undefined, sampai: s.sampai || undefined, status: s.jenis === 'login' && s.gagal ? 'gagal' : undefined })
     s.data = page === 1 ? r.data : [...s.data, ...r.data]
     s.meta = r.meta
+    s.tersedia = r.tersedia !== false
   } catch (e) { s.error = errorMessage(e) } finally { s.loading = false; s.more = false }
 }
 let tm
@@ -38,7 +39,7 @@ onMounted(() => load())
   </div>
   <StateBox v-if="s.error" icon="alert" :title="t('common.failedLoad')" :text="s.error" :action="t('common.retry')" @action="load()" />
   <div v-else-if="s.loading" class="stack"><div v-for="i in 5" :key="i" class="skel" style="height:64px" /></div>
-  <StateBox v-else-if="!s.data.length" icon="history" :title="t('sys.l.none')" :text="''" />
+  <StateBox v-else-if="!s.data.length" icon="history" :title="t('sys.l.none')" :text="s.tersedia ? '' : t('sys.l.unavailable')" />
   <template v-else>
     <p class="cnt">{{ t('sys.l.count', { n: s.meta.total }) }}</p>
     <div class="stack">
