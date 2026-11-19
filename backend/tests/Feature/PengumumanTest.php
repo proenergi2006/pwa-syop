@@ -216,4 +216,107 @@ class PengumumanTest extends TestCase
         $semua = $this->getJson('/api/v1/pengumuman-admin/perkiraan')->json();
         $this->assertSame(DB::table('acl_user')->where('is_active', 1)->count(), $semua['pengguna']);
     }
+
+    public function test_jadwal_dikirim_otomatis_saat_waktunya_dan_hanya_sekali(): void
+    {
+        $this->as(1);
+        $this->postJson('/api/v1/pengumuman-admin', ['judul' => 'Dulu', 'isi' => 'x', 'jenis' => 'info', 'jadwal' => now()->subMinute()->toDateTimeString()])->assertStatus(422); // harus di masa depan
+        $id = $this->postJson('/api/v1/pengumuman-admin', ['judul' => 'Nanti', 'isi' => 'Isi', 'jenis' => 'info', 'sasaran' => [21], 'jadwal' => now()->addHour()->toDateTimeString()])->assertCreated()->json('id');
+        $this->assertSame('terjadwal', DB::table('mobile_announcements')->where('id', $id)->value('status'));
+        $this->artisan('orca:kirim-pengumuman')->assertSuccessful();
+        $this->assertSame([], $this->sent); // belum waktunya
+
+        DB::table('mobile_announcements')->where('id', $id)->update(['jadwal_pada' => now()->subMinute()]);
+        $this->artisan('orca:kirim-pengumuman')->assertSuccessful();
+        $this->assertCount(1, $this->sent);
+        $row = DB::table('mobile_announcements')->where('id', $id)->first();
+        $this->assertSame('terkirim', $row->status);
+        $this->assertNull($row->jadwal_pada);
+        $this->artisan('orca:kirim-pengumuman')->assertSuccessful();
+        $this->assertCount(1, $this->sent); // tidak terkirim dua kali
+
+        // jadwal bisa diubah/dibatalkan sebelum waktunya
+        $id2 = $this->postJson('/api/v1/pengumuman-admin', ['judul' => 'B', 'isi' => 'y', 'jenis' => 'info', 'jadwal' => now()->addDay()->toDateTimeString()])->json('id');
+        $this->putJson("/api/v1/pengumuman-admin/$id2", ['judul' => 'B', 'isi' => 'y', 'jenis' => 'info'])->assertOk();
+        $this->assertSame('draft', DB::table('mobile_announcements')->where('id', $id2)->value('status'));
+        // terjadwal juga bisa dikirim sekarang
+        $id3 = $this->postJson('/api/v1/pengumuman-admin', ['judul' => 'C', 'isi' => 'z', 'jenis' => 'info', 'jadwal' => now()->addDay()->toDateTimeString()])->json('id');
+        $this->postJson("/api/v1/pengumuman-admin/$id3/kirim")->assertOk();
+        $this->assertSame('terkirim', DB::table('mobile_announcements')->where('id', $id3)->value('status'));
+    }
+
+    public function test_gandakan_menjadi_draf_baru(): void
+    {
+        $id = $this->buat(['sasaran' => [21, 7], 'jenis' => 'penting']);
+        $this->postJson("/api/v1/pengumuman-admin/$id/kirim")->assertOk();
+        $baru = $this->postJson("/api/v1/pengumuman-admin/$id/gandakan")->assertCreated()->json('id');
+        $this->assertNotSame($id, $baru);
+        $row = DB::table('mobile_announcements')->where('id', $baru)->first();
+        $this->assertSame('draft', $row->status);
+        $this->assertSame('Libur Natal', $row->judul);
+        $this->assertSame('penting', $row->jenis);
+        $this->assertSame(',21,7,', $row->sasaran);
+        $this->assertNull($row->dikirim_pada);
+        $this->postJson('/api/v1/pengumuman-admin/999999/gandakan')->assertNotFound();
+    }
+
+    public function test_daftar_pembaca_sudah_dan_belum(): void
+    {
+        $id = $this->buat(['sasaran' => [21]]);
+        $this->getJson("/api/v1/pengumuman-admin/$id/pembaca")->assertStatus(409);
+        $this->postJson("/api/v1/pengumuman-admin/$id/kirim")->assertOk();
+        $ceo = DB::table('acl_user')->where('is_active', 1)->where('id_role', 21)->pluck('id_user')->map(fn ($v) => (int) $v)->all();
+        $this->as(1);
+        $belum = $this->getJson("/api/v1/pengumuman-admin/$id/pembaca")->assertOk();
+        $this->assertSame(count($ceo), $belum->json('total'));
+        $this->assertEqualsCanonicalizing($ceo, array_column($belum->json('data'), 'id'));
+        $this->assertSame('CEO', $belum->json('data.0.peran'));
+
+        Sanctum::actingAs(AclUser::find($ceo[0]), ['*']);
+        $this->getJson("/api/v1/pengumuman/$id")->assertOk();
+        $this->as(1);
+        $this->assertSame(count($ceo) - 1, $this->getJson("/api/v1/pengumuman-admin/$id/pembaca")->json('total'));
+        $sudah = $this->getJson("/api/v1/pengumuman-admin/$id/pembaca?status=sudah")->json();
+        $this->assertSame([$ceo[0]], array_column($sudah['data'], 'id'));
+        $this->assertSame(404, $this->getJson('/api/v1/pengumuman-admin/999999/pembaca')->status());
+        $this->as(21);
+        $this->getJson("/api/v1/pengumuman-admin/$id/pembaca")->assertForbidden();
+    }
+
+    public function test_status_notifikasi_pengguna(): void
+    {
+        $this->as(1);
+        DB::table('mobile_push_subscriptions')->delete();
+        DB::table('mobile_client_versions')->delete();
+        DB::table('mobile_settings')->updateOrInsert(['nama' => 'app_versi'], ['nilai' => 'v9', 'diubah_pada' => now()]);
+        $a = AclUser::where('id_role', 21)->where('is_active', 1)->firstOrFail();
+        $b = AclUser::where('id_role', 7)->where('is_active', 1)->firstOrFail();
+        PushSubscription::create(['id_user' => $a->id_user, 'endpoint_hash' => sha1('s1'), 'endpoint' => 'https://example.test/1', 'p256dh' => 'a', 'auth' => 'b']);
+        PushSubscription::create(['id_user' => $a->id_user, 'endpoint_hash' => sha1('s2'), 'endpoint' => 'https://example.test/2', 'p256dh' => 'a', 'auth' => 'b']);
+        DB::table('mobile_client_versions')->insert([['id_user' => $a->id_user, 'versi' => 'v9', 'dilihat_pada' => now()], ['id_user' => $b->id_user, 'versi' => 'v1', 'dilihat_pada' => now()]]);
+
+        $cari = fn ($u, $extra = '') => collect($this->getJson('/api/v1/pengumuman-admin/perangkat?per_page=100&q='.urlencode($u->fullname).$extra)->assertOk()->json('data'))->firstWhere('id', $u->id_user);
+        $r = $this->getJson('/api/v1/pengumuman-admin/perangkat')->assertOk()->json();
+        $total = DB::table('acl_user')->where('is_active', 1)->count();
+        $this->assertSame($total, $r['ringkasan']['pengguna']);
+        $this->assertSame(1, $r['ringkasan']['push_aktif']);
+        $this->assertSame($total - 1, $r['ringkasan']['push_belum']);
+        $this->assertSame('v9', $r['ringkasan']['versi_terbaru']);
+        $ra = $cari($a);
+        $this->assertSame(2, $ra['perangkat']);
+        $this->assertTrue($ra['terbaru']);
+        $rb = $cari($b);
+        $this->assertSame(0, $rb['perangkat']);
+        $this->assertFalse($rb['terbaru']);
+        $this->assertSame('v1', $rb['versi']);
+
+        $belum = $this->getJson('/api/v1/pengumuman-admin/perangkat?filter=belum')->json();
+        $this->assertSame($total - 1, $belum['meta']['total']);
+        $this->assertNull($cari($a, '&filter=belum'));
+        $this->assertNotNull($cari($b, '&filter=belum'));
+        $this->assertNull($cari($a, '&filter=lama'));
+        $this->assertNotNull($cari($b, '&filter=lama'));
+        $this->as(21);
+        $this->getJson('/api/v1/pengumuman-admin/perangkat')->assertForbidden();
+    }
 }

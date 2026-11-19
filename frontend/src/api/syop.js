@@ -174,3 +174,6 @@ export const adminPerkiraanPengumuman = (sasaran) => api.get('/pengumuman-admin/
 export const adminSimpanPengumuman = (payload, id) => (id ? api.put(`/pengumuman-admin/${id}`, payload) : api.post('/pengumuman-admin', payload)).then((r) => r.data)
 export const adminKirimPengumuman = (id) => api.post(`/pengumuman-admin/${id}/kirim`).then((r) => r.data)
 export const adminHapusPengumuman = (id) => api.delete(`/pengumuman-admin/${id}`).then((r) => r.data)
+export const adminGandakanPengumuman = (id) => api.post(`/pengumuman-admin/${id}/gandakan`).then((r) => r.data)
+export const adminPembacaPengumuman = (id, status) => api.get(`/pengumuman-admin/${id}/pembaca`, { params: { status } }).then((r) => r.data)
+export const adminPerangkat = (params = {}) => api.get('/pengumuman-admin/perangkat', { params }).then((r) => r.data)

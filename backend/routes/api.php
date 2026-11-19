@@ -195,6 +195,9 @@ Route::prefix('v1')->group(function () {
         Route::get('perkiraan', [PengumumanController::class, 'perkiraan']);
         Route::post('/', [PengumumanController::class, 'store'])->middleware('throttle:20,1');
         Route::put('{id}', [PengumumanController::class, 'update'])->whereNumber('id')->middleware('throttle:20,1');
+        Route::get('perangkat', [PengumumanController::class, 'perangkat']);
+        Route::get('{id}/pembaca', [PengumumanController::class, 'pembaca'])->whereNumber('id');
+        Route::post('{id}/gandakan', [PengumumanController::class, 'gandakan'])->whereNumber('id')->middleware('throttle:20,1');
         Route::post('{id}/kirim', [PengumumanController::class, 'kirim'])->whereNumber('id')->middleware('throttle:10,1');
         Route::delete('{id}', [PengumumanController::class, 'destroy'])->whereNumber('id')->middleware('throttle:20,1');
     });

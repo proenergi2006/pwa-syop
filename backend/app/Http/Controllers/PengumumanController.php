@@ -3,12 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\AclUser;
-use App\Models\PushSubscription;
-use App\Services\PushService;
+use App\Services\AnnouncementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 /**
  * Pengumuman dari Super Admin ke pengguna aplikasi.
@@ -55,19 +53,6 @@ class PengumumanController extends Controller
             'id' => (int) $a->id, 'judul' => $a->judul, 'isi' => $a->isi, 'jenis' => $a->jenis, 'dikirim_pada' => $a->dikirim_pada,
             'dibaca' => $dibaca,
         ];
-    }
-
-    /** Pengguna aktif yang menjadi sasaran (id) dan yang punya perangkat terdaftar notifikasi. */
-    private static function penerima(?array $roles): array
-    {
-        $q = DB::table('acl_user')->where('is_active', 1);
-        if ($roles) {
-            $q->whereIn('id_role', $roles);
-        }
-        $ids = $q->pluck('id_user')->map(fn ($v) => (int) $v)->all();
-        $perangkat = $ids ? PushSubscription::whereIn('id_user', $ids)->count() : 0;
-
-        return [$ids, $perangkat];
     }
 
     // ---------- pengguna ----------
@@ -120,7 +105,7 @@ class PengumumanController extends Controller
     public function adminIndex(Request $r): JsonResponse
     {
         $per = min(max((int) $r->query('per_page', 20), 1), (int) config('orca.per_page_max'));
-        $page = DB::table('mobile_announcements as a')->orderByRaw("case when a.status = 'draft' then 0 else 1 end")->orderByDesc('a.id')
+        $page = DB::table('mobile_announcements as a')->orderByRaw("case when a.status = 'terkirim' then 1 else 0 end")->orderByDesc('a.id')
             ->select(['a.*', DB::raw('(select count(*) from mobile_announcement_reads r where r.id_announcement = a.id) as dibaca_n')])->paginate($per);
         $peran = DB::table('acl_role')->pluck('role_name', 'id_role');
 
@@ -129,7 +114,7 @@ class PengumumanController extends Controller
                 $roles = self::sasaranArray($a->sasaran);
 
                 return [
-                    'id' => (int) $a->id, 'judul' => $a->judul, 'isi' => $a->isi, 'jenis' => $a->jenis, 'status' => $a->status, 'dikirim_pada' => $a->dikirim_pada,
+                    'id' => (int) $a->id, 'judul' => $a->judul, 'isi' => $a->isi, 'jenis' => $a->jenis, 'status' => $a->status, 'dikirim_pada' => $a->dikirim_pada, 'jadwal_pada' => $a->jadwal_pada,
                     'dikirim_ke' => (int) $a->dikirim_ke, 'push_ke' => (int) $a->push_ke, 'dibaca' => (int) $a->dibaca_n, 'dibuat_nama' => $a->dibuat_nama,
                     'sasaran' => $roles, 'sasaran_nama' => $roles ? array_map(fn ($id) => preg_replace('/^Role /', '', (string) ($peran[$id] ?? $id)), $roles) : null,
                     'dibuat_pada' => $a->created_at,
@@ -152,7 +137,7 @@ class PengumumanController extends Controller
     public function perkiraan(Request $r): JsonResponse
     {
         $roles = array_filter(array_map('intval', (array) $r->query('sasaran', [])));
-        [$ids, $perangkat] = self::penerima($roles ?: null);
+        [$ids, $perangkat] = AnnouncementService::penerima($roles ?: null);
 
         return response()->json(['pengguna' => count($ids), 'perangkat' => $perangkat]);
     }
@@ -166,6 +151,7 @@ class PengumumanController extends Controller
             'sasaran'  => ['nullable', 'array', 'max:30'],
             'sasaran.*' => ['integer'],
             'kirim'    => ['nullable', 'boolean'],
+            'jadwal'   => ['nullable', 'date', 'after:now'],
         ], ['judul.required' => 'Judul wajib diisi.', 'isi.required' => 'Isi pengumuman wajib diisi.']);
     }
 
@@ -173,14 +159,14 @@ class PengumumanController extends Controller
     {
         $d = $this->validasi($r);
         $id = DB::table('mobile_announcements')->insertGetId([
-            'judul' => trim($d['judul']), 'isi' => trim($d['isi']), 'jenis' => $d['jenis'], 'sasaran' => self::sasaranString($d['sasaran'] ?? null), 'status' => 'draft',
+            'judul' => trim($d['judul']), 'isi' => trim($d['isi']), 'jenis' => $d['jenis'], 'sasaran' => self::sasaranString($d['sasaran'] ?? null), 'status' => ! empty($d['jadwal']) ? 'terjadwal' : 'draft', 'jadwal_pada' => $d['jadwal'] ?? null,
             'dibuat_oleh' => $r->user()->id_user, 'dibuat_nama' => $r->user()->fullname, 'created_at' => now(), 'updated_at' => now(),
         ]);
         if (! empty($d['kirim'])) {
             return $this->rilis($id, 201);
         }
 
-        return response()->json(['message' => 'Draf tersimpan.', 'id' => $id], 201);
+        return response()->json(['message' => ! empty($d['jadwal']) ? 'Pengumuman dijadwalkan.' : 'Draf tersimpan.', 'id' => $id], 201);
     }
 
     public function update(Request $r, int $id): JsonResponse
@@ -190,17 +176,85 @@ class PengumumanController extends Controller
         if (! $a) {
             return response()->json(['message' => 'Pengumuman tidak ditemukan.'], 404);
         }
-        if ($a->status !== 'draft') {
+        if ($a->status === 'terkirim') {
             return response()->json(['message' => 'Pengumuman yang sudah dirilis tidak bisa diubah.', 'code' => 'SUDAH_DIRILIS'], 409);
         }
         DB::table('mobile_announcements')->where('id', $id)->update([
-            'judul' => trim($d['judul']), 'isi' => trim($d['isi']), 'jenis' => $d['jenis'], 'sasaran' => self::sasaranString($d['sasaran'] ?? null), 'updated_at' => now(),
+            'judul' => trim($d['judul']), 'isi' => trim($d['isi']), 'jenis' => $d['jenis'], 'sasaran' => self::sasaranString($d['sasaran'] ?? null),
+            'status' => ! empty($d['jadwal']) ? 'terjadwal' : 'draft', 'jadwal_pada' => $d['jadwal'] ?? null, 'updated_at' => now(),
         ]);
         if (! empty($d['kirim'])) {
             return $this->rilis($id);
         }
 
-        return response()->json(['message' => 'Draf tersimpan.', 'id' => $id]);
+        return response()->json(['message' => ! empty($d['jadwal']) ? 'Pengumuman dijadwalkan.' : 'Draf tersimpan.', 'id' => $id]);
+    }
+
+    /** Salin pengumuman (mis. yang sudah terkirim) menjadi draf baru. */
+    public function gandakan(Request $r, int $id): JsonResponse
+    {
+        $a = DB::table('mobile_announcements')->where('id', $id)->first();
+        if (! $a) {
+            return response()->json(['message' => 'Pengumuman tidak ditemukan.'], 404);
+        }
+        $baru = DB::table('mobile_announcements')->insertGetId([
+            'judul' => $a->judul, 'isi' => $a->isi, 'jenis' => $a->jenis, 'sasaran' => $a->sasaran, 'status' => 'draft',
+            'dibuat_oleh' => $r->user()->id_user, 'dibuat_nama' => $r->user()->fullname, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        return response()->json(['message' => 'Disalin sebagai draf baru.', 'id' => $baru], 201);
+    }
+
+    /** Daftar pengguna sasaran yang sudah / belum membaca satu pengumuman terkirim. */
+    public function pembaca(Request $r, int $id): JsonResponse
+    {
+        $a = DB::table('mobile_announcements')->where('id', $id)->first(['id', 'status', 'sasaran']);
+        if (! $a) {
+            return response()->json(['message' => 'Pengumuman tidak ditemukan.'], 404);
+        }
+        if ($a->status !== 'terkirim') {
+            return response()->json(['message' => 'Pengumuman belum dirilis.', 'code' => 'BELUM_DIRILIS'], 409);
+        }
+        $sudah = $r->query('status') === 'sudah';
+        $roles = AnnouncementService::sasaranArray($a->sasaran);
+        $q = DB::table('acl_user as u')->leftJoin('acl_role as ro', 'ro.id_role', '=', 'u.id_role')->where('u.is_active', 1)
+            ->when($roles, fn ($w) => $w->whereIn('u.id_role', $roles))
+            ->when(true, fn ($w) => $sudah
+                ? $w->whereExists(fn ($e) => $e->select(DB::raw(1))->from('mobile_announcement_reads as r')->whereColumn('r.id_user', 'u.id_user')->where('r.id_announcement', $id))
+                : $w->whereNotExists(fn ($e) => $e->select(DB::raw(1))->from('mobile_announcement_reads as r')->whereColumn('r.id_user', 'u.id_user')->where('r.id_announcement', $id)));
+        $total = (clone $q)->count();
+        $rows = $q->orderBy('u.fullname')->limit(300)->get(['u.id_user', 'u.fullname', 'ro.role_name']);
+
+        return response()->json([
+            'total' => $total, 'dipotong' => $total > 300,
+            'data' => $rows->map(fn ($x) => ['id' => (int) $x->id_user, 'nama' => $x->fullname, 'peran' => preg_replace('/^Role /', '', (string) $x->role_name)])->all(),
+        ]);
+    }
+
+    /** Status notifikasi tiap pengguna aktif: sudah mengaktifkan push atau belum, versi aplikasi, terakhir aktif. */
+    public function perangkat(Request $r): JsonResponse
+    {
+        $per = min(max((int) $r->query('per_page', 30), 1), (int) config('orca.per_page_max'));
+        $base = fn () => DB::table('acl_user as u')->where('u.is_active', 1)
+            ->leftJoin('acl_role as ro', 'ro.id_role', '=', 'u.id_role')
+            ->leftJoin('mobile_client_versions as v', 'v.id_user', '=', 'u.id_user')
+            ->leftJoin(DB::raw('(select id_user, count(*) as n from mobile_push_subscriptions group by id_user) as p'), 'p.id_user', '=', 'u.id_user');
+        $total = $base()->count();
+        $aktif = $base()->where('p.n', '>', 0)->count();
+        $versi = DB::table('mobile_settings')->where('nama', 'app_versi')->value('nilai');
+        $q = $base()->when(trim((string) $r->query('q', '')) !== '', fn ($w) => $w->where('u.fullname', 'like', '%'.trim((string) $r->query('q')).'%'))
+            ->when($r->query('filter') === 'belum', fn ($w) => $w->whereRaw('coalesce(p.n, 0) = 0'))
+            ->when($r->query('filter') === 'lama' && $versi, fn ($w) => $w->where(fn ($x) => $x->whereNull('v.versi')->orWhere('v.versi', '!=', $versi)));
+        $page = $q->orderBy('u.fullname')->paginate($per, ['u.id_user', 'u.fullname', 'ro.role_name', DB::raw('coalesce(p.n, 0) as perangkat'), 'v.versi', 'v.dilihat_pada']);
+
+        return response()->json([
+            'ringkasan' => ['pengguna' => $total, 'push_aktif' => $aktif, 'push_belum' => $total - $aktif, 'versi_terbaru' => $versi],
+            'data' => collect($page->items())->map(fn ($x) => [
+                'id' => (int) $x->id_user, 'nama' => $x->fullname, 'peran' => preg_replace('/^Role /', '', (string) $x->role_name),
+                'perangkat' => (int) $x->perangkat, 'versi' => $x->versi, 'terbaru' => $versi && $x->versi === $versi, 'terakhir_aktif' => $x->dilihat_pada,
+            ])->all(),
+            'meta' => ['page' => $page->currentPage(), 'per_page' => $page->perPage(), 'total' => $page->total(), 'last' => $page->lastPage()],
+        ]);
     }
 
     public function kirim(int $id): JsonResponse
@@ -219,35 +273,17 @@ class PengumumanController extends Controller
         return response()->json(['message' => 'Pengumuman dihapus.']);
     }
 
-    /** Rilis: tandai terkirim (sekali; yang sudah terkirim ditolak) lalu kirim push satu kali ke perangkat pengguna sasaran. */
+    /** Rilis sekarang (tanpa menunggu jadwal). */
     private function rilis(int $id, int $status = 200): JsonResponse
     {
-        $a = DB::transaction(function () use ($id) {
-            $a = DB::table('mobile_announcements')->where('id', $id)->lockForUpdate()->first();
-            if (! $a || $a->status !== 'draft') {
-                return $a ? 'sudah' : null;
-            }
-            $roles = self::sasaranArray($a->sasaran);
-            [$ids] = self::penerima($roles ?: null);
-            DB::table('mobile_announcements')->where('id', $id)->update(['status' => 'terkirim', 'dikirim_pada' => now(), 'dikirim_ke' => count($ids), 'updated_at' => now()]);
-            $a->ids = $ids;
-
-            return $a;
-        });
-        if ($a === null) {
+        $r = app(AnnouncementService::class)->rilis($id);
+        if ($r === null) {
             return response()->json(['message' => 'Pengumuman tidak ditemukan.'], 404);
         }
-        if ($a === 'sudah') {
+        if ($r === 'sudah') {
             return response()->json(['message' => 'Pengumuman ini sudah pernah dirilis.', 'code' => 'SUDAH_DIRILIS'], 409);
         }
 
-        $isi = Str::limit(trim(preg_replace('/\s+/', ' ', (string) $a->isi)), 140);
-        $push = app(PushService::class)->send($a->ids, [
-            'title' => $a->judul, 'body' => $isi, 'url' => '/pengumuman?buka='.$id, 'tag' => 'pengumuman-'.$id,
-            'en' => ['title' => $a->judul, 'body' => $isi],
-        ]);
-        DB::table('mobile_announcements')->where('id', $id)->update(['push_ke' => $push]);
-
-        return response()->json(['message' => 'Pengumuman dirilis ke '.count($a->ids).' pengguna.', 'id' => $id, 'dikirim_ke' => count($a->ids), 'push_ke' => $push], $status);
+        return response()->json(['message' => 'Pengumuman dirilis ke '.$r['dikirim_ke'].' pengguna.', 'id' => $id] + $r, $status);
     }
 }
