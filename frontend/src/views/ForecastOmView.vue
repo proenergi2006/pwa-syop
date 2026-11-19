@@ -291,7 +291,7 @@ onMounted(async () => {
       <template v-if="tab === 'fill'">
         <div class="tools">
           <label class="search"><Icon name="search" :size="20" /><input v-model="q" type="search" :aria-label="t('fo.search')" :placeholder="t('fo.search')" /></label>
-          <button v-if="!locked" class="addbtn" @click="openAdd"><Icon name="plus" :size="20" /> {{ t('fo.add') }}</button>
+          <button v-if="!locked" class="addbtn" @click="openAdd"><Icon name="plus" :size="20" /><span class="lbl-long">{{ t('fo.add') }}</span><span class="lbl-short">{{ t('fo.addShort') }}</span></button>
         </div>
         <StateBox v-if="!data.customers.length" icon="chart" :title="t('fo.none')" :text="t('fo.noneText')" />
         <StateBox v-else-if="!shown.length" icon="search" :title="t('fo.noMatch')" text="" />
@@ -496,9 +496,12 @@ onMounted(async () => {
 .scrollx::-webkit-scrollbar { display: none; }
 .scrollx .chip { flex: none; }
 .cnt { margin-left: 8px; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--red); color: #fff; font-size: 11px; display: inline-grid; place-items: center; }
-.tools { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin: 12px 0; align-items: center; }
-.tools .search { margin: 0; }
-.addbtn { min-height: 46px; padding: 0 14px; border-radius: 14px; border: 0; background: var(--accent); color: #fff; font-size: 13.5px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; font-family: inherit; }
+.tools { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; margin: 12px 0; align-items: center; }
+.tools .search { margin: 0; min-width: 0; }
+.tools .search input { min-width: 0; width: 100%; }
+@media (max-width: 400px) { .lbl-long { display: none; } }
+@media (min-width: 401px) { .lbl-short { display: none; } }
+.addbtn { flex: none; white-space: nowrap; min-height: 46px; padding: 0 14px; border-radius: 14px; border: 0; background: var(--accent); color: #fff; font-size: 13.5px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; font-family: inherit; }
 .cust { display: grid; gap: 8px; padding: 14px 16px; border-radius: 18px; border: 1px solid var(--line); background: var(--card); text-align: left; font-family: inherit; color: var(--ink); width: 100%; }
 .c-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .c-n { font-size: 14.5px; font-weight: 800; letter-spacing: -0.01em; overflow-wrap: anywhere; }

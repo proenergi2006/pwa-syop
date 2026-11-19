@@ -243,7 +243,7 @@ onMounted(async () => {
       <template v-if="tab === 'fill'">
         <div class="tools">
           <label class="search"><Icon name="search" :size="20" /><input v-model="q" type="search" :aria-label="t('fo.search')" :placeholder="t('fo.search')" /></label>
-          <button v-if="!locked" class="addbtn" @click="openAdd"><Icon name="plus" :size="20" /> {{ t('fo.add') }}</button>
+          <button v-if="!locked" class="addbtn" @click="openAdd"><Icon name="plus" :size="20" /><span class="lbl-long">{{ t('fo.add') }}</span><span class="lbl-short">{{ t('fo.addShort') }}</span></button>
         </div>
         <p v-if="data.ada_default" class="defn"><i class="swatch" /> {{ t('fb.defaultNote') }}</p>
         <StateBox v-if="!data.customers.length" icon="chart" :title="t('fo.none')" :text="t('fo.noneText')" />
@@ -389,9 +389,12 @@ onMounted(async () => {
 .h-note small { color: rgba(255, 255, 255, 0.85); font-size: 12px; }
 .h-cta { position: relative; width: 100%; margin-top: 12px; min-height: 46px; border: 0; border-radius: 14px; background: rgba(255, 255, 255, 0.95); color: #0b4f4d; font-size: 14.5px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; }
 .cnt { margin-left: 8px; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--red); color: #fff; font-size: 11px; display: inline-grid; place-items: center; }
-.tools { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin: 12px 0; align-items: center; }
-.tools .search { margin: 0; }
-.addbtn { min-height: 46px; padding: 0 14px; border-radius: 14px; border: 0; background: var(--accent); color: #fff; font-size: 13.5px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; font-family: inherit; }
+.tools { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; margin: 12px 0; align-items: center; }
+.tools .search { margin: 0; min-width: 0; }
+.tools .search input { min-width: 0; width: 100%; }
+@media (max-width: 400px) { .lbl-long { display: none; } }
+@media (min-width: 401px) { .lbl-short { display: none; } }
+.addbtn { flex: none; white-space: nowrap; min-height: 46px; padding: 0 14px; border-radius: 14px; border: 0; background: var(--accent); color: #fff; font-size: 13.5px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; font-family: inherit; }
 .defn { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 12px; color: var(--muted); }
 .swatch { flex: none; width: 14px; height: 14px; border-radius: 4px; background: repeating-linear-gradient(135deg, #cdd3df, #cdd3df 3px, #e8ebf2 3px, #e8ebf2 6px); }
 .cust { display: grid; gap: 8px; padding: 14px 16px; border-radius: 18px; border: 1px solid var(--line); background: var(--card); text-align: left; font-family: inherit; color: var(--ink); width: 100%; }
