@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1
 # --- Tahap 1: build PWA ---
 FROM node:22-alpine AS build
 WORKDIR /app

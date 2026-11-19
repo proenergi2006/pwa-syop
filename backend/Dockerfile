@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1
 # --- Tahap 1: dependensi PHP (tanpa paket dev) ---
 FROM composer:2 AS vendor
 WORKDIR /app
