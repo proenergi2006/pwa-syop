@@ -18,6 +18,8 @@ use App\Http\Controllers\PoController;
 use App\Http\Controllers\LcrController;
 use App\Http\Controllers\PermohonanController;
 use App\Http\Controllers\ProdukController;
+use App\Http\Controllers\ForecastController;
+use App\Http\Controllers\RequestOaController;
 use App\Http\Controllers\ReportMarketingController;
 use App\Http\Controllers\ReportRsspController;
 use App\Http\Controllers\RefundPenerimaController;
@@ -162,6 +164,23 @@ Route::prefix('v1')->group(function () {
         Route::get('cabang', [ReportRsspController::class, 'cabangList']);
         Route::get('/', [ReportRsspController::class, 'index']);
         Route::get('detail', [ReportRsspController::class, 'detail']);
+    });
+
+    Route::middleware(['auth:sanctum', ModuleAccess::class.':oa'])->prefix('request-oa')->group(function () {
+        Route::get('/', [RequestOaController::class, 'index']);
+        Route::get('{id}', [RequestOaController::class, 'show'])->whereNumber('id');
+        Route::post('{id}/keputusan', [RequestOaController::class, 'decide'])->whereNumber('id')->middleware('throttle:20,1');
+    });
+
+    Route::middleware(['auth:sanctum', ModuleAccess::class.':forecast'])->prefix('forecast')->group(function () {
+        Route::get('menunggu', [ForecastController::class, 'menunggu']);
+        Route::get('rekap', [ForecastController::class, 'rekap']);
+        Route::get('cabang', [ForecastController::class, 'cabang']);
+        Route::get('request', [ForecastController::class, 'requests']);
+        Route::post('periode/setujui', [ForecastController::class, 'approvePeriode'])->middleware('throttle:20,1');
+        Route::post('periode/tolak', [ForecastController::class, 'rejectPeriode'])->middleware('throttle:20,1');
+        Route::post('request/{id}/setujui', [ForecastController::class, 'approveRequest'])->whereNumber('id')->middleware('throttle:20,1');
+        Route::post('request/{id}/tolak', [ForecastController::class, 'rejectRequest'])->whereNumber('id')->middleware('throttle:20,1');
     });
 
     Route::middleware(['auth:sanctum', ModuleAccess::class.':sc'])->prefix('sales-confirmation')->group(function () {

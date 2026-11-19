@@ -42,21 +42,7 @@ class ReportRsspController extends Controller
     /** Libur nasional + cuti bersama (tanggalmerah.upset.dev), seperti web: di-cache sehari, gagal -> hanya akhir pekan. */
     private function libur(int $tahun): array
     {
-        return Cache::remember("rssp-libur:$tahun", 86400, function () use ($tahun) {
-            try {
-                $json = Http::timeout(3)->get('https://tanggalmerah.upset.dev/api/holidays', ['year' => $tahun])->json();
-            } catch (\Throwable) {
-                $json = null;
-            }
-            $map = [];
-            if (is_array($json) && ! empty($json['success']) && isset($json['data'])) {
-                foreach ($json['data'] as $h) {
-                    $map[$h['date']] = ['name' => $h['name'], 'type' => $h['type']];
-                }
-            }
-
-            return $map;
-        });
+        return \App\Services\HariLibur::tahun($tahun);
     }
 
     private static function filterTerminal(bool $nasional): string

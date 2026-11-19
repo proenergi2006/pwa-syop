@@ -15,6 +15,7 @@ import * as syop from '../api/syop'
 import { errorMessage } from '../api/client'
 import { showToast } from '../composables/useToast'
 import { angka, hariIni, jamSekarang, rupiahRingkas, sapaan, lalu, tanggalJam } from '../utils/format'
+import { bulanPanjang } from '../utils/chart'
 
 const router = useRouter()
 const scrolled = useScrolled(96) // lewat dari area salam: bilah ringkas menempel di atas
@@ -47,8 +48,8 @@ const logoutOpen = ref(false)
 const limitedMods = computed(() => Array.isArray(auth.user?.modules) && auth.user.modules.every((x) => ['penawaran', 'stok_terminal', 'reservasi', 'mobil', 'inventory', 'dr', 'trucking_dr', 'master', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'report', 'rssp'].includes(x)))
 const has = (m) => !m || !Array.isArray(auth.user?.modules) || auth.user.modules.includes(m)
 const canPenawaran = computed(() => has('penawaran'))
-const canApprove = computed(() => ['penawaran', 'po', 'shipping', 'trucking', 'dr', 'trucking_dr', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc'].some((m) => has(m)))
-const breakdown = computed(() => [['penawaran', 'home.m.penawaran'], ['po', 'home.m.po'], ['shipping', 'SI'], ['trucking', 'TI'], ['dr', 'DR'], ['trucking_dr', 'Trucking DR'], ['verifikasi_customer', 'Verifikasi Customer'], ['refund', 'Refund'], ['permohonan', 'Permohonan'], ['lcr', 'LCR'], ['sc', 'SC']].filter(([k]) => has(k) && inbox.count(k) > 0).map(([k, l]) => `${inbox.count(k)} ${l.startsWith('home.') ? t(l) : l}`).join(' · '))
+const canApprove = computed(() => ['penawaran', 'po', 'shipping', 'trucking', 'dr', 'trucking_dr', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'oa', 'forecast'].some((m) => has(m)))
+const breakdown = computed(() => [['penawaran', 'home.m.penawaran'], ['po', 'home.m.po'], ['shipping', 'SI'], ['trucking', 'TI'], ['dr', 'DR'], ['trucking_dr', 'Trucking DR'], ['verifikasi_customer', 'Verifikasi Customer'], ['refund', 'Refund'], ['permohonan', 'Permohonan'], ['lcr', 'LCR'], ['sc', 'SC'], ['oa', 'Verifikasi OA'], ['forecast', 'Forecast']].filter(([k]) => has(k) && inbox.count(k) > 0).map(([k, l]) => `${inbox.count(k)} ${l.startsWith('home.') ? t(l) : l}`).join(' · '))
 const quick = [
   { key: 'penawaran', label: 'home.m.penawaran', icon: 'doc', to: 'approval', c: 'var(--accent)', mod: 'penawaran' },
   { key: 'inventory', label: 'home.m.inventory', icon: 'box', to: 'inventory', c: '#e07400', mod: 'inventory' },
@@ -69,6 +70,8 @@ const quick = [
   { key: 'refund', label: 'home.m.refund', icon: 'refund', to: 'refund-penerima', c: 'var(--accent)', mod: 'refund' },
   { key: 'shipping', label: 'home.m.shipping', icon: 'ship', to: 'shipping', c: 'var(--accent)', mod: 'shipping' },
   { key: 'trucking', label: 'home.m.trucking', icon: 'truck', to: 'trucking', c: '#e07400', mod: 'trucking' },
+  { key: 'oa', label: 'oa.title', icon: 'invoice', to: 'oa', c: '#6d28d9', mod: 'oa' },
+  { key: 'forecast', label: 'fc.title', icon: 'chart', to: 'forecast', c: '#0b7a4b', mod: 'forecast' },
 ]
 // Tata letak menu diatur pengguna (urutan dan sembunyikan); disimpan per akun di perangkat ini.
 const LAYOUT_KEY = () => `orcax_menu_${auth.user?.id ?? 'x'}`
@@ -152,6 +155,13 @@ async function openNotif() {
     if (has('sc')) jobs.push(syop.listSc({ per_page: 6, filter: 'menunggu' }).then((r) => ({
       key: 'sc', to: 'sc', icon: 'invoice', tone: 'teal', total: r.meta.total,
       items: r.data.map((n) => ({ id: n.id, title: n.nomor_po, sub: n.customer, when: '', go: { name: 'sc-detail', params: { id: n.id } } })) })))
+    if (has('oa')) jobs.push(syop.listOa({ per_page: 6, tab: 'wait' }).then((r) => ({
+      key: 'oa', to: 'oa', icon: 'invoice', tone: 'violet', total: r.waiting,
+      items: r.data.map((n) => ({ id: n.id, title: n.no_do_syop || n.nomor_po, sub: `${n.nama_customer} · ${n.selisih > 0 ? '+' : ''}${angka(n.selisih || 0)}`, when: n.created_time, go: { name: 'oa-detail', params: { id: n.id } } })) })))
+    if (has('forecast')) jobs.push(syop.forecastMenunggu().then((r) => {
+      const items = r.data.map((c) => ({ id: `${c.cabang}-${c.tahun}-${c.bulan}`, title: `${c.nama} · ${bulanPanjang(c.bulan - 1)} ${c.tahun}`, sub: t('fc.periodsWaiting', { p: c.periode.map((p) => 'P' + p).join(' + ') }), when: '', go: { name: 'forecast-cabang', params: { id: c.cabang }, query: { bulan: c.bulan, tahun: c.tahun } } }))
+      return { key: 'forecast', to: 'forecast', icon: 'chart', tone: 'green', total: r.waiting + r.waiting_request, items }
+    }))
     const groups = (await Promise.all(jobs.map((j) => j.catch(() => null)))).filter((g) => g && g.total > 0)
     notifs.value = groups
     const by = Object.fromEntries(groups.map((g) => [g.key, g.total]))
@@ -166,6 +176,9 @@ async function openNotif() {
     inbox.permohonan = by.permohonan || 0
     inbox.lcr = by.lcr || 0
     inbox.sc = by.sc || 0
+    inbox.oa = by.oa || 0
+    inbox.forecast = by.forecast || 0
+    inbox.forecast_request = 0
   } catch { notifs.value = [] } finally { notifLoading.value = false }
 }
 

@@ -107,6 +107,8 @@ onBeforeUnmount(() => window.removeEventListener('online', onOnline))
       <button v-if="has('shipping')" class="chip" @click="router.push({ name: 'shipping' })">SI ({{ inbox.shipping }})</button>
       <button v-if="has('trucking')" class="chip" @click="router.push({ name: 'trucking' })">TI ({{ inbox.trucking }})</button>
       <button v-if="has('dr')" class="chip" @click="router.push({ name: 'dr' })">DR ({{ inbox.dr }})</button>
+      <button v-if="has('oa')" class="chip" @click="router.push({ name: 'oa' })">OA ({{ inbox.oa }})</button>
+      <button v-if="has('forecast')" class="chip" @click="router.push({ name: 'forecast' })">Forecast ({{ inbox.forecast + inbox.forecast_request }})</button>
       <button v-if="seg === 'pen'" class="chip" :class="{ on: sort === 'asc' }" :aria-pressed="sort === 'asc'" @click="sort = sort === 'asc' ? 'desc' : 'asc'">
         <Icon name="clock" :size="16" />&nbsp;{{ t('appr.oldest') }}
       </button>

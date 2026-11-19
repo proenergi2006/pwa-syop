@@ -38,6 +38,8 @@ const modules = [
   { key: 'po', label: 'mod.po', icon: 'cart', to: 'po', tone: 'violet', mod: 'po' },
   { key: 'sales', label: 'mod.sales', icon: 'chart', tone: 'green' },
   { key: 'trucking', label: 'home.m.trucking', icon: 'truck', to: 'trucking', tone: 'orange', mod: 'trucking' },
+  { key: 'oa', label: 'oa.title', icon: 'invoice', to: 'oa', tone: 'violet', mod: 'oa' },
+  { key: 'forecast', label: 'fc.title', icon: 'chart', to: 'forecast', tone: 'green', mod: 'forecast' },
   { key: 'kirim', label: 'mod.kirim', icon: 'truck', tone: 'orange' },
   { key: 'invoice', label: 'mod.invoice', icon: 'invoice', tone: 'rose' },
 ]

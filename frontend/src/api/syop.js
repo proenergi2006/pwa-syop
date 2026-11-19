@@ -126,3 +126,18 @@ export const reportKegiatanShow = (id) => api.get(`/report/marketing/kegiatan/${
 export const reportRsspCabang = () => api.get('/report/rssp/cabang').then((r) => r.data.data)
 export const reportRssp = (params = {}) => api.get('/report/rssp', { params }).then((r) => r.data)
 export const reportRsspDetail = (params = {}) => api.get('/report/rssp/detail', { params }).then((r) => r.data)
+
+// Verifikasi OA (CEO)
+export const listOa = (params = {}) => api.get('/request-oa', { params }).then((r) => r.data)
+export const getOa = (id) => api.get(`/request-oa/${id}`).then((r) => r.data)
+export const decideOa = (id, payload) => api.post(`/request-oa/${id}/keputusan`, payload).then((r) => r.data)
+
+// Verifikasi Forecast (CEO)
+export const forecastMenunggu = () => api.get('/forecast/menunggu').then((r) => r.data)
+export const forecastRekap = (params = {}) => api.get('/forecast/rekap', { params }).then((r) => r.data)
+export const forecastCabang = (params = {}) => api.get('/forecast/cabang', { params }).then((r) => r.data)
+export const forecastRequests = (params = {}) => api.get('/forecast/request', { params }).then((r) => r.data)
+export const forecastApprove = (payload) => api.post('/forecast/periode/setujui', payload).then((r) => r.data)
+export const forecastReject = (payload) => api.post('/forecast/periode/tolak', payload).then((r) => r.data)
+export const forecastApproveRequest = (id, payload = {}) => api.post(`/forecast/request/${id}/setujui`, payload).then((r) => r.data)
+export const forecastRejectRequest = (id, payload) => api.post(`/forecast/request/${id}/tolak`, payload).then((r) => r.data)

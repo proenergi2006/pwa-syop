@@ -15,6 +15,10 @@ const router = createRouter({
     { path: '/mobil', name: 'mobil', component: () => import('../views/MobilView.vue'), meta: { nav: true, module: 'mobil' } },
     { path: '/trucking', name: 'trucking', component: () => import('../views/TruckingView.vue'), meta: { nav: true, module: 'trucking' } },
     { path: '/trucking/:id(\\d+)', name: 'trucking-detail', component: () => import('../views/TruckingDetailView.vue'), props: true, meta: { module: 'trucking' } },
+    { path: '/verifikasi-oa', name: 'oa', component: () => import('../views/OaView.vue'), meta: { nav: true, module: 'oa' } },
+    { path: '/verifikasi-oa/:id(\\d+)', name: 'oa-detail', component: () => import('../views/OaDetailView.vue'), props: true, meta: { module: 'oa' } },
+    { path: '/forecast', name: 'forecast', component: () => import('../views/ForecastView.vue'), meta: { nav: true, module: 'forecast' } },
+    { path: '/forecast/cabang/:id(\\d+)', name: 'forecast-cabang', component: () => import('../views/ForecastCabangView.vue'), props: true, meta: { module: 'forecast' } },
     { path: '/master-terminal', name: 'master-terminal', component: () => import('../views/MasterTerminalView.vue'), meta: { nav: true, module: 'master' } },
     { path: '/master-terminal/form', name: 'master-terminal-form', component: () => import('../views/MasterTerminalFormView.vue'), meta: { module: 'master' } },
     { path: '/master-vendor', name: 'master-vendor', component: () => import('../views/MasterVendorView.vue'), meta: { nav: true, module: 'master' } },
@@ -54,7 +58,7 @@ const router = createRouter({
 
 router.beforeEach((to, from) => {
   // Detail masuk dari kanan, kembali ke kiri; antar tab memudar naik.
-  navDir.value = ['approval-detail', 'shipping-detail', 'trucking-detail', 'dr-detail', 'trucking-dr-detail', 'po-detail', 'harga-detail', 'harga-form', 'produk-detail', 'produk-form', 'master-terminal-form', 'master-vendor-form'].includes(to.name) ? 'slide-left' : ['approval-detail', 'shipping-detail', 'trucking-detail', 'dr-detail', 'trucking-dr-detail', 'po-detail', 'harga-detail', 'harga-form', 'produk-detail', 'produk-form', 'master-terminal-form', 'master-vendor-form'].includes(from.name) ? 'slide-right' : 'fade-up'
+  navDir.value = ['approval-detail', 'shipping-detail', 'trucking-detail', 'oa-detail', 'forecast-cabang', 'dr-detail', 'trucking-dr-detail', 'po-detail', 'harga-detail', 'harga-form', 'produk-detail', 'produk-form', 'master-terminal-form', 'master-vendor-form'].includes(to.name) ? 'slide-left' : ['approval-detail', 'shipping-detail', 'trucking-detail', 'oa-detail', 'forecast-cabang', 'dr-detail', 'trucking-dr-detail', 'po-detail', 'harga-detail', 'harga-form', 'produk-detail', 'produk-form', 'master-terminal-form', 'master-vendor-form'].includes(from.name) ? 'slide-right' : 'fade-up'
   if (!to.meta.public && !tokenStore.get()) return { name: 'login' }
   if (to.name === 'login' && tokenStore.get()) return { name: 'home' }
   // Modul yang tidak tersedia untuk peran ini kembali ke Beranda.
