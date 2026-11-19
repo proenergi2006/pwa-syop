@@ -151,3 +151,10 @@ export const forecastOmAjukan = (payload) => api.post('/forecast-om/ajukan', pay
 export const forecastOmMenunggu = () => api.get('/forecast-om/menunggu').then((r) => r.data)
 export const forecastOmRequests = (params = {}) => api.get('/forecast-om/request', { params }).then((r) => r.data)
 export const forecastOmDecide = (id, payload) => api.post(`/forecast-om/request/${id}/keputusan`, payload).then((r) => r.data)
+
+// Forecast Customer (BM)
+export const forecastBmData = (params) => api.get('/forecast-bm/data', { params }).then((r) => r.data)
+export const forecastBmCustomer = (params) => api.get('/forecast-bm/customer', { params }).then((r) => r.data)
+export const forecastBmIsi = (payload) => api.post('/forecast-bm/isi', payload).then((r) => r.data)
+export const forecastBmRequests = (params = {}) => api.get('/forecast-bm/request', { params }).then((r) => r.data)
+export const forecastBmRequest = (payload) => api.post('/forecast-bm/request', payload).then((r) => r.data)

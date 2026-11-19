@@ -65,6 +65,77 @@ class ForecastDefault
         return $map;
     }
 
+    /** Periode masih terbuka untuk default = belum diajukan / ditolak (approval terakhirnya bukan WAITING atau APPROVED). */
+    public static function terbuka(int $cabang, int $bulan, int $tahun, int $periode): bool
+    {
+        $st = DB::table('pro_forecast_approval')->where('id_wilayah', $cabang)->where('bulan', $bulan)->where('tahun', $tahun)->where('periode', $periode)
+            ->orderByDesc('id_approval')->value('status');
+
+        return ! ($st === 'WAITING' || $st === 'APPROVED');
+    }
+
+    /** id customer (cabang ini) yang sudah punya isian forecast di periode itu (qty 0 = penanda dihapus ikut dihitung sebagai sudah diisi). */
+    public static function denganIsian(int $cabang, int $bulan, int $tahun, int $periode, ?int $customerId = null): array
+    {
+        [$lo, $hi] = self::range($bulan, $tahun, $periode);
+        $q = DB::table('pro_forecast as f')->join('pro_customer as c', 'c.id_customer', '=', 'f.id_customer')->where('c.id_wilayah', $cabang)
+            ->whereBetween('f.tanggal', [sprintf('%04d-%02d-%02d', $tahun, $bulan, $lo), sprintf('%04d-%02d-%02d', $tahun, $bulan, $hi)]);
+        if ($customerId) {
+            $q->where('f.id_customer', $customerId);
+        }
+
+        return array_flip(array_map('intval', $q->distinct()->pluck('f.id_customer')->all()));
+    }
+
+    /** Default yang masih relevan ditampilkan: periode terbuka dan customer belum punya isian. [id_customer => [hari => qty]] */
+    public static function tampil(int $cabang, int $bulan, int $tahun, int $periode): array
+    {
+        if (! self::terbuka($cabang, $bulan, $tahun, $periode)) {
+            return [];
+        }
+        $map = self::map($cabang, $bulan, $tahun, $periode);
+
+        return array_diff_key($map, self::denganIsian($cabang, $bulan, $tahun, $periode));
+    }
+
+    /** Simpan default ke pro_forecast. INSERT IGNORE: tidak pernah menimpa isian yang sudah ada. Mengembalikan jumlah baris yang dicoba. */
+    public static function simpan(int $cabang, int $bulan, int $tahun, int $periode, ?int $customerId = null): int
+    {
+        if (! self::terbuka($cabang, $bulan, $tahun, $periode)) {
+            return 0;
+        }
+        $map = array_diff_key(self::map($cabang, $bulan, $tahun, $periode, $customerId), self::denganIsian($cabang, $bulan, $tahun, $periode, $customerId));
+        $rows = [];
+        foreach ($map as $idCust => $perHari) {
+            foreach ($perHari as $hari => $qty) {
+                $rows[] = ['id_customer' => (int) $idCust, 'tanggal' => sprintf('%04d-%02d-%02d', $tahun, $bulan, $hari), 'qty' => (float) $qty];
+            }
+        }
+        foreach (array_chunk($rows, 200) as $chunk) {
+            DB::table('pro_forecast')->insertOrIgnore($chunk);
+        }
+
+        return count($rows);
+    }
+
+    /** Sebelum satu sel diubah: default customer itu ikut disimpan dulu, supaya sel lain yang masih berupa default tidak hilang saat dimuat ulang. */
+    public static function adopt(int $idCustomer, string $tanggal): void
+    {
+        $ts = strtotime($tanggal);
+        $cabang = $ts ? DB::table('pro_customer')->where('id_customer', $idCustomer)->value('id_wilayah') : null;
+        if ($cabang) {
+            self::simpan((int) $cabang, (int) date('n', $ts), (int) date('Y', $ts), (int) date('j', $ts) <= 14 ? 1 : 2, $idCustomer);
+        }
+    }
+
+    /** Tanggal default mulai disimpan otomatis oleh cron web: 4 hari sebelum periode dimulai (H-3 dari berakhirnya periode sebelumnya). */
+    public static function pemicu(int $bulan, int $tahun, int $periode): string
+    {
+        [$lo] = self::range($bulan, $tahun, $periode);
+
+        return date('Y-m-d', strtotime(sprintf('%04d-%02d-%02d', $tahun, $bulan, $lo).' -4 days'));
+    }
+
     /** Dipanggil setelah sebuah sel customer dikosongkan: bila periodenya jadi kosong padahal punya default, simpan penanda (qty 0). */
     public static function tandaiDihapus(int $idCustomer, string $tanggal): void
     {

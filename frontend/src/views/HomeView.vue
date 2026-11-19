@@ -45,11 +45,11 @@ const notifs = ref([])
 const logoutOpen = ref(false)
 
 // Menu utama (bulat): yang sudah bisa dipakai membuka halamannya, sisanya memberi tahu "segera hadir".
-const limitedMods = computed(() => Array.isArray(auth.user?.modules) && auth.user.modules.every((x) => ['penawaran', 'stok_terminal', 'reservasi', 'mobil', 'inventory', 'dr', 'trucking_dr', 'master', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'report', 'rssp', 'forecast_om'].includes(x)))
+const limitedMods = computed(() => Array.isArray(auth.user?.modules) && auth.user.modules.every((x) => ['penawaran', 'stok_terminal', 'reservasi', 'mobil', 'inventory', 'dr', 'trucking_dr', 'master', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'report', 'rssp', 'forecast_om', 'forecast_bm'].includes(x)))
 const has = (m) => !m || !Array.isArray(auth.user?.modules) || auth.user.modules.includes(m)
 const canPenawaran = computed(() => has('penawaran'))
-const canApprove = computed(() => ['penawaran', 'po', 'shipping', 'trucking', 'dr', 'trucking_dr', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'oa', 'forecast', 'forecast_om'].some((m) => has(m)))
-const breakdown = computed(() => [['penawaran', 'home.m.penawaran'], ['po', 'home.m.po'], ['shipping', 'SI'], ['trucking', 'TI'], ['dr', 'DR'], ['trucking_dr', 'Trucking DR'], ['verifikasi_customer', 'Verifikasi Customer'], ['refund', 'Refund'], ['permohonan', 'Permohonan'], ['lcr', 'LCR'], ['sc', 'SC'], ['oa', 'Verifikasi OA'], ['forecast', 'Forecast'], ['forecast_om', 'Forecast']].filter(([k]) => has(k) && inbox.count(k) > 0).map(([k, l]) => `${inbox.count(k)} ${l.startsWith('home.') ? t(l) : l}`).join(' · '))
+const canApprove = computed(() => ['penawaran', 'po', 'shipping', 'trucking', 'dr', 'trucking_dr', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'oa', 'forecast', 'forecast_om', 'forecast_bm'].some((m) => has(m)))
+const breakdown = computed(() => [['penawaran', 'home.m.penawaran'], ['po', 'home.m.po'], ['shipping', 'SI'], ['trucking', 'TI'], ['dr', 'DR'], ['trucking_dr', 'Trucking DR'], ['verifikasi_customer', 'Verifikasi Customer'], ['refund', 'Refund'], ['permohonan', 'Permohonan'], ['lcr', 'LCR'], ['sc', 'SC'], ['oa', 'Verifikasi OA'], ['forecast', 'Forecast'], ['forecast_om', 'Forecast'], ['forecast_bm', 'Forecast']].filter(([k]) => has(k) && inbox.count(k) > 0).map(([k, l]) => `${inbox.count(k)} ${l.startsWith('home.') ? t(l) : l}`).join(' · '))
 const quick = [
   { key: 'penawaran', label: 'home.m.penawaran', icon: 'doc', to: 'approval', c: 'var(--accent)', mod: 'penawaran' },
   { key: 'inventory', label: 'home.m.inventory', icon: 'box', to: 'inventory', c: '#e07400', mod: 'inventory' },
@@ -73,6 +73,7 @@ const quick = [
   { key: 'oa', label: 'oa.title', icon: 'invoice', to: 'oa', c: '#6d28d9', mod: 'oa' },
   { key: 'forecast', label: 'fc.title', icon: 'chart', to: 'forecast', c: '#0b7a4b', mod: 'forecast' },
   { key: 'forecast_om', label: 'fo.title', icon: 'chart', to: 'forecast-om', c: '#0f8b8d', mod: 'forecast_om' },
+  { key: 'forecast_bm', label: 'fo.title', icon: 'chart', to: 'forecast-bm', c: '#0f8b8d', mod: 'forecast_bm' },
 ]
 // Tata letak menu diatur pengguna (urutan dan sembunyikan); disimpan per akun di perangkat ini.
 const LAYOUT_KEY = () => `orcax_menu_${auth.user?.id ?? 'x'}`
@@ -168,6 +169,10 @@ async function openNotif() {
       const req = r.requests.map((x) => ({ id: `q${x.id}`, title: x.nama_customer, sub: `${x.nama_cabang} · +${angka(x.qty)}`, when: x.tanggal, go: { name: 'forecast-om', query: { tab: 'request' } } }))
       return { key: 'forecast_om', to: 'forecast-om', icon: 'chart', tone: 'teal', total: r.waiting_request + r.waiting_revisi, items: [...rev, ...req] }
     }))
+    if (has('forecast_bm')) jobs.push(syop.forecastBmData({ bulan: new Date().getMonth() + 1, tahun: new Date().getFullYear(), periode: 1 }).then((r) => {
+      const items = [1, 2].filter((p) => r.review[p].status === 'REJECTED').map((p) => ({ id: `b${p}`, title: `${r.cabang.nama} · ${bulanPanjang(r.bulan - 1)} ${r.tahun}`, sub: t('fo.rejectedSub', { p }), when: '', go: { name: 'forecast-bm', query: { periode: p } } }))
+      return { key: 'forecast_bm', to: 'forecast-bm', icon: 'chart', tone: 'teal', total: items.length, items }
+    }))
     const groups = (await Promise.all(jobs.map((j) => j.catch(() => null)))).filter((g) => g && g.total > 0)
     notifs.value = groups
     const by = Object.fromEntries(groups.map((g) => [g.key, g.total]))
@@ -187,6 +192,7 @@ async function openNotif() {
     inbox.forecast_request = 0
     inbox.forecast_om = by.forecast_om || 0
     inbox.forecast_revisi = 0
+    inbox.forecast_bm = by.forecast_bm || 0
   } catch { notifs.value = [] } finally { notifLoading.value = false }
 }
 

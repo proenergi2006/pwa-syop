@@ -19,6 +19,7 @@ use App\Http\Controllers\LcrController;
 use App\Http\Controllers\PermohonanController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\ForecastController;
+use App\Http\Controllers\ForecastBmController;
 use App\Http\Controllers\ForecastOmController;
 use App\Http\Controllers\RequestOaController;
 use App\Http\Controllers\ReportMarketingController;
@@ -171,6 +172,14 @@ Route::prefix('v1')->group(function () {
         Route::get('/', [RequestOaController::class, 'index']);
         Route::get('{id}', [RequestOaController::class, 'show'])->whereNumber('id');
         Route::post('{id}/keputusan', [RequestOaController::class, 'decide'])->whereNumber('id')->middleware('throttle:20,1');
+    });
+
+    Route::middleware(['auth:sanctum', ModuleAccess::class.':forecast_bm'])->prefix('forecast-bm')->group(function () {
+        Route::get('data', [ForecastBmController::class, 'data']);
+        Route::get('customer', [ForecastBmController::class, 'customer']);
+        Route::post('isi', [ForecastBmController::class, 'isi'])->middleware('throttle:120,1');
+        Route::get('request', [ForecastBmController::class, 'requests']);
+        Route::post('request', [ForecastBmController::class, 'requestStore'])->middleware('throttle:20,1');
     });
 
     Route::middleware(['auth:sanctum', ModuleAccess::class.':forecast_om'])->prefix('forecast-om')->group(function () {
