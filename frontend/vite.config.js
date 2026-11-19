@@ -8,8 +8,19 @@ import { VitePWA } from 'vite-plugin-pwa'
 const BACKEND = process.env.SYOP_BACKEND || 'http://127.0.0.1:8010'
 const proxy = { '/api': { target: BACKEND, changeOrigin: true } }
 
+// Versi build: dikirim aplikasi ke server (header X-App-Version) dan ditulis ke /version.json, supaya server tahu kapan ada rilis baru
+// dan siapa yang masih memakai versi lama (orca:cek-versi di backend).
+const APP_VERSION = process.env.SYOP_VERSION || Date.now().toString(36)
+
 export default defineConfig({
+  define: { __APP_VERSION__: JSON.stringify(APP_VERSION) },
   plugins: [
+    {
+      name: 'orca-version-json',
+      generateBundle() {
+        this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ version: APP_VERSION, built_at: new Date().toISOString() }) })
+      },
+    },
     // HTTPS lokal bersertifikat self-signed (SYOP_HTTPS=1) supaya kamera bisa dipakai dari HP lewat Wi-Fi.
     ...(process.env.SYOP_HTTPS ? [basicSsl()] : []),
     vue(),

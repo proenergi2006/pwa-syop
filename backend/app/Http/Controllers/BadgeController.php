@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ClientVersion;
 use App\Services\WaitingCounts;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -11,6 +12,9 @@ class BadgeController extends Controller
 {
     public function __invoke(Request $request): JsonResponse
     {
-        return response()->json(WaitingCounts::for($request->user()));
+        ClientVersion::catat($request);
+
+        // pengumuman belum dibaca dihitung terpisah: bukan "menunggu keputusan", jadi tidak ikut jumlah total approval
+        return response()->json(WaitingCounts::for($request->user()) + ['pengumuman' => PengumumanController::belumDibaca($request->user())]);
     }
 }

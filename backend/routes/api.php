@@ -16,6 +16,7 @@ use App\Http\Controllers\MasterVendorController;
 use App\Http\Controllers\MobilController;
 use App\Http\Controllers\PoController;
 use App\Http\Controllers\LcrController;
+use App\Http\Controllers\PengumumanController;
 use App\Http\Controllers\PermohonanController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\ForecastController;
@@ -180,6 +181,22 @@ Route::prefix('v1')->group(function () {
         Route::get('/', [RequestOaController::class, 'index']);
         Route::get('{id}', [RequestOaController::class, 'show'])->whereNumber('id');
         Route::post('{id}/keputusan', [RequestOaController::class, 'decide'])->whereNumber('id')->middleware('throttle:20,1');
+    });
+
+    Route::middleware(['auth:sanctum', ModuleAccess::class.':pengumuman'])->prefix('pengumuman')->group(function () {
+        Route::get('/', [PengumumanController::class, 'index']);
+        Route::post('baca-semua', [PengumumanController::class, 'bacaSemua'])->middleware('throttle:30,1');
+        Route::get('{id}', [PengumumanController::class, 'show'])->whereNumber('id');
+    });
+
+    Route::middleware(['auth:sanctum', ModuleAccess::class.':pengumuman_admin'])->prefix('pengumuman-admin')->group(function () {
+        Route::get('/', [PengumumanController::class, 'adminIndex']);
+        Route::get('peran', [PengumumanController::class, 'peran']);
+        Route::get('perkiraan', [PengumumanController::class, 'perkiraan']);
+        Route::post('/', [PengumumanController::class, 'store'])->middleware('throttle:20,1');
+        Route::put('{id}', [PengumumanController::class, 'update'])->whereNumber('id')->middleware('throttle:20,1');
+        Route::post('{id}/kirim', [PengumumanController::class, 'kirim'])->whereNumber('id')->middleware('throttle:10,1');
+        Route::delete('{id}', [PengumumanController::class, 'destroy'])->whereNumber('id')->middleware('throttle:20,1');
     });
 
     Route::middleware(['auth:sanctum', ModuleAccess::class.':forecast_bm'])->prefix('forecast-bm')->group(function () {

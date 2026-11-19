@@ -45,7 +45,7 @@ const notifs = ref([])
 const logoutOpen = ref(false)
 
 // Menu utama (bulat): yang sudah bisa dipakai membuka halamannya, sisanya memberi tahu "segera hadir".
-const limitedMods = computed(() => Array.isArray(auth.user?.modules) && auth.user.modules.every((x) => ['penawaran', 'stok_terminal', 'reservasi', 'mobil', 'inventory', 'dr', 'trucking_dr', 'master', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'report', 'rssp', 'forecast_om', 'forecast_bm', 'rssp_input'].includes(x)))
+const limitedMods = computed(() => Array.isArray(auth.user?.modules) && auth.user.modules.every((x) => ['penawaran', 'stok_terminal', 'reservasi', 'mobil', 'inventory', 'dr', 'trucking_dr', 'master', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'report', 'rssp', 'forecast_om', 'forecast_bm', 'rssp_input', 'pengumuman', 'pengumuman_admin'].includes(x)))
 const has = (m) => !m || !Array.isArray(auth.user?.modules) || (Array.isArray(m) ? m.some((x) => auth.user.modules.includes(x)) : auth.user.modules.includes(m))
 const canPenawaran = computed(() => has('penawaran'))
 const canApprove = computed(() => ['penawaran', 'po', 'shipping', 'trucking', 'dr', 'trucking_dr', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'oa', 'forecast', 'forecast_om', 'forecast_bm'].some((m) => has(m)))
@@ -74,6 +74,8 @@ const quick = [
   { key: 'forecast', label: 'fc.title', icon: 'chart', to: 'forecast', c: '#0b7a4b', mod: 'forecast' },
   { key: 'forecast_om', label: 'fo.title', icon: 'chart', to: 'forecast-om', c: '#0f8b8d', mod: 'forecast_om' },
   { key: 'forecast_bm', label: 'fo.title', icon: 'chart', to: 'forecast-bm', c: '#0f8b8d', mod: 'forecast_bm' },
+  { key: 'pengumuman', label: 'pg.title', icon: 'bell', to: 'pengumuman', c: '#d93a45', mod: 'pengumuman' },
+  { key: 'pengumuman_admin', label: 'pg.manage', icon: 'edit', to: 'pengumuman-admin', c: '#4f46e5', mod: 'pengumuman_admin' },
 ]
 // Tata letak menu diatur pengguna (urutan dan sembunyikan); disimpan per akun di perangkat ini.
 const LAYOUT_KEY = () => `orcax_menu_${auth.user?.id ?? 'x'}`

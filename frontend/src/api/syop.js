@@ -163,3 +163,14 @@ export const forecastBmRequest = (payload) => api.post('/forecast-bm/request', p
 export const rsspInputShow = (params) => api.get('/report/rssp/input', { params }).then((r) => r.data)
 export const rsspInputSave = (payload) => api.post('/report/rssp/input', payload).then((r) => r.data)
 export const rsspInputDelete = (payload) => api.post('/report/rssp/input/hapus', payload).then((r) => r.data)
+
+// Pengumuman
+export const listPengumuman = (params = {}) => api.get('/pengumuman', { params }).then((r) => r.data)
+export const getPengumuman = (id) => api.get(`/pengumuman/${id}`).then((r) => r.data)
+export const bacaSemuaPengumuman = () => api.post('/pengumuman/baca-semua').then((r) => r.data)
+export const adminListPengumuman = (params = {}) => api.get('/pengumuman-admin', { params }).then((r) => r.data)
+export const adminPeranPengumuman = () => api.get('/pengumuman-admin/peran').then((r) => r.data.data)
+export const adminPerkiraanPengumuman = (sasaran) => api.get('/pengumuman-admin/perkiraan', { params: { sasaran } }).then((r) => r.data)
+export const adminSimpanPengumuman = (payload, id) => (id ? api.put(`/pengumuman-admin/${id}`, payload) : api.post('/pengumuman-admin', payload)).then((r) => r.data)
+export const adminKirimPengumuman = (id) => api.post(`/pengumuman-admin/${id}/kirim`).then((r) => r.data)
+export const adminHapusPengumuman = (id) => api.delete(`/pengumuman-admin/${id}`).then((r) => r.data)

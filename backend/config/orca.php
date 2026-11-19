@@ -46,6 +46,8 @@ return [
         'rssp_input' => [5], // Input Report RSSP: Forecast Supply dan Forecast Sales Planning per terminal (Procurement/Purchasing)
         'rssp' => [5, 6, 21], // Report RSSP Fuel (stok, supply, sales harian): Purchasing, OM, dan CEO
         'oa' => [21], // Verifikasi Request Input OA: persetujuan CEO
+        'pengumuman' => ['*'], // Pengumuman dari Super Admin: semua pengguna membaca
+        'pengumuman_admin' => [1], // Kelola Pengumuman (tulis, rilis, hapus): Super Admin
         'forecast_bm' => [7], // Forecast Customer BM: isi forecast harian cabang sendiri, request tambahan qty ke OM
         'forecast_om' => [6], // Forecast Customer OM: isi forecast harian, ajukan ke CEO, setujui/tolak request qty dari BM
         'forecast' => [21], // Verifikasi Forecast cabang per periode dan request tambahan qty: persetujuan CEO
@@ -55,6 +57,9 @@ return [
     ],
 
     // flag_disposisi => id_role yang berhak memutuskan pada tahap itu.
+    // Alamat version.json hasil build frontend (dibaca orca:cek-versi). Kosong = APP_URL + /version.json.
+    'version_url' => env('ORCA_VERSION_URL'),
+
     'stage_role' => [
         3 => 7,   // BM cabang
         4 => 6,   // OM

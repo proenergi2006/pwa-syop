@@ -66,7 +66,7 @@ class ApprovalTest extends TestCase
 
         $res = $this->postJson('/api/v1/auth/login', [
             'username' => AclUser::find($uid)->username, 'password' => 'Rahasia123',
-        ])->assertOk()->assertJsonPath('user.modules', ['mobil', 'reservasi']);
+        ])->assertOk()->assertJsonPath('user.modules', ['pengumuman', 'mobil', 'reservasi']);
 
         $this->withToken($res->json('token'))->getJson('/api/v1/penawaran')->assertStatus(403);
     }

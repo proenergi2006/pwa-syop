@@ -32,7 +32,7 @@ app.mount('#app')
 // Notifikasi diketuk saat aplikasi sudah terbuka: service worker meminta kita pindah halaman.
 navigator.serviceWorker?.addEventListener('message', (e) => {
   if (e.data?.type !== 'navigate') return
-  try { router.push(new URL(e.data.url).pathname) } catch { /* abaikan */ }
+  try { const u = new URL(e.data.url); router.push(u.pathname + u.search) } catch { /* abaikan */ }
 })
 
 // Versi baru diunduh di latar belakang lalu menunggu; pita "Versi baru tersedia" mengaktifkannya. Cek tiap kali aplikasi kembali ke depan dan tiap 30 menit.

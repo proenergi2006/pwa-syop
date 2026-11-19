@@ -15,8 +15,12 @@ export const api = axios.create({
   headers: { Accept: 'application/json' },
 })
 
+// Versi build aplikasi ini (diisi saat build); server memakainya untuk tahu siapa yang belum memperbarui.
+const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : 'dev'
+
 api.interceptors.request.use((cfg) => {
   const t = tokenStore.get()
+  cfg.headers['X-App-Version'] = APP_VERSION
   if (t) cfg.headers.Authorization = `Bearer ${t}`
   return cfg
 })

@@ -73,6 +73,7 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         $user = $request->user();
+        \App\Services\ClientVersion::catat($request, $user);
 
         return response()->json([
             'user'        => $this->profileFor($user),
