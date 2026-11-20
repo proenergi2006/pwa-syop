@@ -6,12 +6,13 @@ import UserAvatar from '../components/UserAvatar.vue'
 import SistemKesehatan from '../components/sistem/SistemKesehatan.vue'
 import SistemWajah from '../components/sistem/SistemWajah.vue'
 import SistemLog from '../components/sistem/SistemLog.vue'
+import SistemPengguna from '../components/sistem/SistemPengguna.vue'
 import SistemAkses from '../components/sistem/SistemAkses.vue'
 import SistemPengaturan from '../components/sistem/SistemPengaturan.vue'
 
 const scrolled = useScrolled()
 const TABS = [
-  ['kesehatan', SistemKesehatan], ['wajah', SistemWajah], ['log', SistemLog], ['akses', SistemAkses], ['pengaturan', SistemPengaturan],
+  ['kesehatan', SistemKesehatan], ['pengguna', SistemPengguna], ['wajah', SistemWajah], ['log', SistemLog], ['akses', SistemAkses], ['pengaturan', SistemPengaturan],
 ]
 let saved = 'kesehatan'
 try { saved = sessionStorage.getItem('orcax_sistem_tab') || saved } catch { /* abaikan */ }
