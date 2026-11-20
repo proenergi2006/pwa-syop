@@ -96,11 +96,41 @@ class DrTest extends TestCase
         }
     }
 
-    public function test_hanya_purchasing(): void
+    public function test_ceo_hanya_melihat_dan_peran_lain_ditolak(): void
     {
+        $id = $this->pending();
+        foreach ([7, 6, 3] as $role) {
+            $this->as($role);
+            $this->getJson('/api/v1/dr')->assertStatus(403);
+            $this->getJson("/api/v1/dr/$id")->assertStatus(403);
+        }
+
         $this->as(21);
-        $this->getJson('/api/v1/dr')->assertStatus(403);
+        $this->getJson('/api/v1/dr')->assertOk()->assertJsonStructure(['data' => [['id', 'nomor_pr', 'status']]]);
+        $d = $this->getJson("/api/v1/dr/$id")->assertOk()->json();
+        $this->assertTrue($d['read_only']);
+        $this->assertFalse($d['can_save']);
+        $this->assertFalse($d['can_return']);
+        $this->assertFalse($d['can_revise']);
+        $this->assertNotEmpty($d['lines']);
+        // semua yang mengubah data ditolak
+        $this->postJson("/api/v1/dr/$id/verifikasi", [])->assertStatus(403);
+        $this->postJson("/api/v1/dr/$id/revisi", [])->assertStatus(403);
+        $this->postJson("/api/v1/dr/$id/kembali-dp", [])->assertStatus(403);
+        $this->postJson("/api/v1/dr/$id/reset-split", [])->assertStatus(403);
+        $this->getJson("/api/v1/dr/$id/po-supplier")->assertStatus(403);
+        // tidak menjadi notifikasi "menunggu" CEO
+        $this->assertSame(0, (int) $this->getJson('/api/v1/badges')->json('dr'));
+        $this->assertContains('dr_lihat', $this->getJson('/api/v1/auth/me')->json('user.modules'));
+        $this->assertNotContains('dr', $this->getJson('/api/v1/auth/me')->json('user.modules'));
+    }
+
+    public function test_purchasing_tetap_bisa_mengubah(): void
+    {
+        $id = $this->pending();
         $this->as(5);
+        $this->assertFalse($this->getJson("/api/v1/dr/$id")->assertOk()->json('read_only'));
+        $this->assertNotContains('dr_lihat', $this->getJson('/api/v1/auth/me')->json('user.modules'));
         $this->getJson('/api/v1/dr')->assertOk()->assertJsonStructure(['data' => [['id', 'nomor_pr', 'status', 'customer', 'volume']], 'waiting', 'cabang', 'meta']);
         $this->assertGreaterThan(0, $this->getJson('/api/v1/badges')->json('dr'));
     }

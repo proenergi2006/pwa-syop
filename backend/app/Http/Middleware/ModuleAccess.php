@@ -11,7 +11,9 @@ class ModuleAccess
     public function handle(Request $request, Closure $next, string $module)
     {
         $user = $request->user();
-        if (! $user || ! self::allows($module, (int) $user->id_role)) {
+        // 'dr|dr_lihat' = salah satu modul cukup.
+        $ok = $user && collect(explode('|', $module))->contains(fn ($m) => self::allows($m, (int) $user->id_role));
+        if (! $ok) {
             return response()->json(['message' => 'Akun Anda tidak memiliki akses ke modul ini.'], 403);
         }
 

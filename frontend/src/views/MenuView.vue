@@ -24,7 +24,7 @@ const modules = [
   { key: 'reservasi', label: 'home.m.reservasi', icon: 'calendar', to: 'reservasi', tone: 'blue', mod: 'reservasi' },
   { key: 'mobil', label: 'home.m.mobil', icon: 'car', to: 'mobil', tone: 'orange', mod: 'mobil' },
   { key: 'produk', label: 'home.m.produk', icon: 'drop', to: 'produk', tone: 'teal', mod: 'produk' },
-  { key: 'dr', label: 'home.m.dr', icon: 'cart', to: 'dr', tone: 'violet', mod: 'dr' },
+  { key: 'dr', label: 'home.m.dr', icon: 'cart', to: 'dr', tone: 'violet', mod: ['dr', 'dr_lihat'] },
   { key: 'master_terminal', label: 'home.m.terminal', icon: 'box', to: 'master-terminal', tone: 'teal', mod: 'master' },
   { key: 'master_vendor', label: 'home.m.vendor', icon: 'cart', to: 'master-vendor', tone: 'violet', mod: 'master' },
   { key: 'trucking_dr', label: 'home.m.truckingDr', icon: 'truck', to: 'trucking-dr', tone: 'orange', mod: 'trucking_dr' },

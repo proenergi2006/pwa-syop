@@ -185,6 +185,7 @@ onMounted(load)
           <div class="kv"><span>{{ t('dr.release') }}</span><span>{{ d.dr_release ? tanggalJam(d.dr_release).split(' · ').pop() + ' WIB' : '-' }}</span></div>
         </section>
 
+        <p v-if="d.read_only" class="warn"><Icon name="lock" :size="16" /> {{ t('dr.readOnly') }}</p>
         <p v-if="d.locked_until && !d.terverifikasi" class="warn"><Icon name="clock" :size="16" /> {{ t('dr.locked', { t: lockedAt }) }}</p>
         <section v-if="d.catatan_cfo" class="card box note-box"><h2>{{ t('dr.noteCfo') }}</h2><p class="pre">{{ d.catatan_cfo }}</p></section>
         <section v-if="d.catatan_ceo" class="card box note-box"><h2>{{ t('dr.noteCeo') }}</h2><p class="pre">{{ d.catatan_ceo }}</p></section>

@@ -33,6 +33,7 @@ return [
         'harga' => [21], // Master harga jual (daftar, tambah, ubah, hapus)
         'po' => [21], // Verifikasi PO Supplier: tahap CEO (CFO menyusul)
         'dr' => [5], // Delivery Request: verifikasi Purchasing
+        'dr_lihat' => [21], // Delivery Request (Procurement) hanya lihat: CEO. Tanpa verifikasi, simpan, revisi, atau kembalikan
         'master' => [5], // Master Terminal dan Master Vendor: Purchasing/Procurement
         'trucking_dr' => [5], // Trucking Delivery Request: verifikasi Purchasing/Procurement
         'sc' => [7], // Verifikasi Sales Confirmation: BM, per cabang

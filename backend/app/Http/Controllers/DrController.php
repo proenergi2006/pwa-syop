@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\Accurate\AccurateDrSync;
 use App\Services\Accurate\AccurateException;
 use App\Services\ApprovalMail;
+use App\Http\Middleware\ModuleAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -266,8 +267,9 @@ class DrController extends Controller
         $out = array_map(fn ($x) => $this->line($x, $verified), $lines);
         $disLo = $first && ($first->revert_cfo || $first->revert_ceo);
         $locked = $this->lockedUntil($h);
-        $canSave = $first && ! $fnr && (int) $first->sm_result === 1 && (int) $h->disposisi_pr === 3 && ! $locked;
-        $canRevise = (int) $h->disposisi_pr === 6 && $h->tanggal_pr >= self::LEGACY;
+        $bisaUbah = ModuleAccess::allows('dr', (int) request()->user()->id_role); // CEO (dr_lihat) hanya melihat
+        $canSave = $bisaUbah && $first && ! $fnr && (int) $first->sm_result === 1 && (int) $h->disposisi_pr === 3 && ! $locked;
+        $canRevise = $bisaUbah && (int) $h->disposisi_pr === 6 && $h->tanggal_pr >= self::LEGACY;
 
         return response()->json([
             'id' => (int) $h->id_pr, 'nomor_pr' => $h->nomor_pr, 'tanggal_pr' => $h->tanggal_pr, 'cabang' => $h->nama_cabang,
@@ -277,7 +279,7 @@ class DrController extends Controller
             'catatan_ceo' => $first && $first->revert_ceo ? self::plain($h->revert_ceo_summary) : null,
             'catatan_purchasing' => self::plain($h->purchasing_summary), 'purchasing_pic' => $h->purchasing_pic, 'purchasing_tanggal' => $h->purchasing_tanggal,
             'dis_lo' => (bool) $disLo,
-            'can_save' => $canSave, 'can_return' => $canSave, 'cabang_inventory' => self::cabangInventory((int) $h->id_wilayah), 'locked_until' => $locked, 'can_revise' => $canRevise,
+            'read_only' => ! $bisaUbah, 'can_save' => $canSave, 'can_return' => $canSave, 'cabang_inventory' => self::cabangInventory((int) $h->id_wilayah), 'locked_until' => $locked, 'can_revise' => $canRevise,
             'total_volume' => array_sum(array_column($out, 'volume')), 'total_nett_profit' => round(array_sum(array_map(fn ($l) => $l['nett_profit'] + $l['nett_profit_potong'], $out)), 2),
             'lines' => $out,
         ]);

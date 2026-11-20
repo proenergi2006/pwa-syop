@@ -157,12 +157,15 @@ Route::prefix('v1')->group(function () {
         Route::post('{id}/keputusan', [ShippingController::class, 'decide'])->whereNumber('id')->middleware('throttle:30,1');
     });
 
-    Route::middleware(['auth:sanctum', ModuleAccess::class.':dr'])->prefix('dr')->group(function () {
+    // Lihat saja (CEO: dr_lihat) dan peran verifikator (dr) memakai GET yang sama; semua yang mengubah data hanya modul dr.
+    Route::middleware(['auth:sanctum', ModuleAccess::class.':dr|dr_lihat'])->prefix('dr')->group(function () {
         Route::get('/', [DrController::class, 'index']);
         Route::get('{id}', [DrController::class, 'show'])->whereNumber('id');
+        Route::get('{id}/history/{penawaran}', [DrController::class, 'historyApprove'])->whereNumber('id')->whereNumber('penawaran');
+    });
+    Route::middleware(['auth:sanctum', ModuleAccess::class.':dr'])->prefix('dr')->group(function () {
         Route::post('{id}/verifikasi', [DrController::class, 'verify'])->whereNumber('id')->middleware('throttle:30,1');
         Route::get('{id}/po-supplier', [DrController::class, 'poSupplier'])->whereNumber('id');
-        Route::get('{id}/history/{penawaran}', [DrController::class, 'historyApprove'])->whereNumber('id')->whereNumber('penawaran');
         Route::post('{id}/revisi', [DrController::class, 'revise'])->whereNumber('id')->middleware('throttle:30,1');
         Route::post('{id}/kembali-dp', [DrController::class, 'returnToDp'])->whereNumber('id')->middleware('throttle:10,1');
         Route::post('{id}/reset-split', [DrController::class, 'resetSplit'])->whereNumber('id')->middleware('throttle:10,1');

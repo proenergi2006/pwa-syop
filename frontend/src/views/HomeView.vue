@@ -59,7 +59,7 @@ const quick = [
   { key: 'reservasi', label: 'home.m.reservasi', icon: 'calendar', to: 'reservasi', c: '#04247a', mod: 'reservasi' },
   { key: 'mobil', label: 'home.m.mobil', icon: 'car', to: 'mobil', c: '#e07400', mod: 'mobil' },
   { key: 'produk', label: 'home.m.produk', icon: 'drop', to: 'produk', c: '#0f8b8d', mod: 'produk' },
-  { key: 'dr', label: 'home.m.dr', icon: 'cart', to: 'dr', c: '#6d28d9', mod: 'dr' },
+  { key: 'dr', label: 'home.m.dr', icon: 'cart', to: 'dr', c: '#6d28d9', mod: ['dr', 'dr_lihat'] },
   { key: 'trucking_dr', label: 'home.m.truckingDr', icon: 'truck', to: 'trucking-dr', c: '#e07400', mod: 'trucking_dr' },
   { key: 'verifikasi_customer', label: 'vc.title', icon: 'doc', to: 'verifikasi-customer', c: 'var(--accent)', mod: 'verifikasi_customer' },
   { key: 'master_terminal', label: 'home.m.terminal', icon: 'box', to: 'master-terminal', c: '#0f8b8d', mod: 'master' },
