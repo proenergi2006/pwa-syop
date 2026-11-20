@@ -179,6 +179,7 @@ export const adminPembacaPengumuman = (id, status) => api.get(`/pengumuman-admin
 export const adminPerangkat = (params = {}) => api.get('/pengumuman-admin/perangkat', { params }).then((r) => r.data)
 
 // Pusat Admin (Sistem)
+export const sistemRingkasan = () => api.get('/sistem/ringkasan').then((r) => r.data)
 export const sistemKesehatan = () => api.get('/sistem/kesehatan').then((r) => r.data)
 export const sistemWajah = (params = {}) => api.get('/sistem/wajah', { params }).then((r) => r.data)
 export const sistemResetWajah = (id) => api.delete(`/sistem/wajah/${id}`).then((r) => r.data)

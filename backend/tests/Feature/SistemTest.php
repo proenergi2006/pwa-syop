@@ -34,17 +34,49 @@ class SistemTest extends TestCase
     {
         foreach ([21, 7, 6, 5] as $role) {
             $this->as($role);
-            foreach (['kesehatan', 'wajah', 'log', 'pengaturan', 'akses'] as $p) {
+            foreach (['ringkasan', 'kesehatan', 'wajah', 'log', 'pengaturan', 'akses'] as $p) {
                 $this->getJson("/api/v1/sistem/$p")->assertForbidden();
             }
             $this->putJson('/api/v1/sistem/pengaturan', ['aktif' => true])->assertForbidden();
             $this->putJson('/api/v1/sistem/akses/po', ['roles' => [5]])->assertForbidden();
         }
         $this->as(1);
-        foreach (['kesehatan', 'wajah', 'log', 'pengaturan', 'akses'] as $p) {
+        foreach (['ringkasan', 'kesehatan', 'wajah', 'log', 'pengaturan', 'akses'] as $p) {
             $this->getJson("/api/v1/sistem/$p")->assertOk();
         }
         $this->assertContains('sistem', $this->getJson('/api/v1/auth/me')->json('user.modules'));
+    }
+
+    public function test_ringkasan_beranda_admin(): void
+    {
+        $admin = $this->as(1);
+        DB::table('mobile_settings')->where('nama', 'hb_scheduler')->delete();
+        $r = $this->getJson('/api/v1/sistem/ringkasan')->assertOk()->json();
+        $this->assertSame('merah', $r['status']); // scheduler mati
+        $this->assertContains('scheduler', array_column($r['masalah'], 'kode'));
+
+        AppSettings::detak();
+        $r = $this->getJson('/api/v1/sistem/ringkasan')->json();
+        $this->assertNotSame('merah', $r['status']);
+        $this->assertNotContains('scheduler', array_column($r['masalah'], 'kode'));
+
+        $base = DB::table('mobile_auth_log')->whereBetween('created_at', [now()->startOfDay(), now()->endOfDay()]);
+        $loginAwal = (clone $base)->whereIn('event', ['login_ok', 'face_ok'])->distinct()->count('id_user');
+        $gagalAwal = (clone $base)->where('event', 'like', '%fail')->count();
+        $row = fn ($e, $uid) => ['id_user' => $uid, 'username' => 'x', 'event' => $e, 'ip' => '1.1.1.1', 'created_at' => now()];
+        DB::table('mobile_auth_log')->insert([$row('login_ok', 910001), $row('face_ok', 910001), $row('login_ok', 910002), $row('login_fail', null), $row('akses_ubah', $admin->id_user)]);
+        $a = $this->getJson('/api/v1/sistem/ringkasan')->json('aktivitas');
+        $this->assertSame($loginAwal + 2, $a['hari_ini']['pengguna']); // pengguna unik, bukan jumlah baris
+        $this->assertSame($gagalAwal + 1, $a['hari_ini']['gagal']);
+        $this->assertGreaterThanOrEqual(1, $a['hari_ini']['tindakan_admin']);
+
+        DB::table('mobile_announcements')->insert(['judul' => 'Uji ringkasan', 'isi' => 'x', 'jenis' => 'info', 'status' => 'terkirim', 'dikirim_pada' => now()->addMinute(), 'dikirim_ke' => 4, 'push_ke' => 2, 'dibuat_oleh' => 1, 'created_at' => now(), 'updated_at' => now()]);
+        $id = DB::table('mobile_announcements')->where('judul', 'Uji ringkasan')->value('id');
+        DB::table('mobile_announcement_reads')->insert(['id_announcement' => $id, 'id_user' => 910001, 'dibaca_pada' => now()]);
+        $p = $this->getJson('/api/v1/sistem/ringkasan')->json('pengumuman');
+        $this->assertSame('Uji ringkasan', $p['judul']);
+        $this->assertSame(1, $p['dibaca']);
+        $this->assertSame(25, $p['persen']);
     }
 
     public function test_kesehatan_scheduler_dan_push(): void

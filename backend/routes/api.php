@@ -41,6 +41,7 @@ Route::prefix('v1')->group(function () {
     Route::get('status', [SistemController::class, 'status'])->middleware('throttle:60,1');
 
     Route::middleware(['auth:sanctum', ModuleAccess::class.':sistem'])->prefix('sistem')->group(function () {
+        Route::get('ringkasan', [SistemController::class, 'ringkasan']);
         Route::get('kesehatan', [SistemController::class, 'kesehatan']);
         Route::get('wajah', [SistemController::class, 'wajah']);
         Route::delete('wajah/{id}', [SistemController::class, 'resetWajah'])->whereNumber('id')->middleware('throttle:30,1');

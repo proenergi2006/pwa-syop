@@ -83,6 +83,55 @@ class SistemController extends Controller
         ]);
     }
 
+    // ---------- ringkasan Beranda Super Admin ----------
+
+    public function ringkasan(): JsonResponse
+    {
+        $k = $this->kesehatan()->getData(true);
+        $masalah = [];
+        $merah = false;
+        if (! $k['database']['ok']) { $masalah[] = ['kode' => 'db', 'berat' => 'merah']; $merah = true; }
+        if (! $k['scheduler']['ok']) { $masalah[] = ['kode' => 'scheduler', 'berat' => 'merah']; $merah = true; }
+        if ($k['pengumuman']['terlambat'] > 0) { $masalah[] = ['kode' => 'pengumuman_terlambat', 'berat' => 'kuning', 'n' => $k['pengumuman']['terlambat']]; }
+        if (! $k['push']['siap']) { $masalah[] = ['kode' => 'push_belum_siap', 'berat' => 'kuning']; }
+        elseif ($k['push']['gagal_24j'] > 0) { $masalah[] = ['kode' => 'push_gagal', 'berat' => 'kuning', 'n' => $k['push']['gagal_24j']]; }
+        if (($k['pemeliharaan']['aktif'] ?? false)) { $masalah[] = ['kode' => 'pemeliharaan', 'berat' => 'kuning']; }
+        if ($k['penyimpanan']['total_gb'] > 0 && $k['penyimpanan']['bebas_gb'] / $k['penyimpanan']['total_gb'] < 0.1) { $masalah[] = ['kode' => 'disk', 'berat' => 'kuning']; }
+        if ($k['lingkungan']['env'] === 'production' && $k['lingkungan']['debug']) { $masalah[] = ['kode' => 'debug', 'berat' => 'kuning']; }
+
+        $hari = fn ($d) => [$d->copy()->startOfDay()->toDateTimeString(), $d->copy()->endOfDay()->toDateTimeString()];
+        $hitung = function (array $rentang) {
+            [$a, $b] = $rentang;
+            $q = fn () => DB::table('mobile_auth_log')->whereBetween('created_at', [$a, $b]);
+
+            return [
+                'pengguna' => (int) $q()->whereIn('event', ['login_ok', 'face_ok'])->whereNotNull('id_user')->distinct()->count('id_user'),
+                'gagal' => (int) $q()->where('event', 'like', '%fail')->count(),
+                'tindakan_admin' => (int) $q()->whereIn('event', ['face_reset_admin', 'pengaturan_ubah', 'akses_ubah'])->count(),
+            ];
+        };
+        $ini = $hitung($hari(now()));
+        $lalu = $hitung($hari(now()->subDay()));
+
+        $p = DB::table('mobile_announcements as a')->where('a.status', 'terkirim')->orderByDesc('a.dikirim_pada')->orderByDesc('a.id')
+            ->select(['a.id', 'a.judul', 'a.jenis', 'a.dikirim_pada', 'a.dikirim_ke', 'a.push_ke', DB::raw('(select count(*) from mobile_announcement_reads r where r.id_announcement = a.id) as dibaca_n')])->first();
+
+        return response()->json([
+            'status' => $merah ? 'merah' : ($masalah ? 'kuning' : 'hijau'),
+            'masalah' => $masalah,
+            'sistem' => [
+                'scheduler_detik' => $k['scheduler']['detik'], 'perangkat_push' => $k['push']['perangkat'], 'gagal_push_24j' => $k['push']['gagal_24j'],
+                'versi' => $k['versi']['rilis'], 'versi_terbaru' => $k['versi']['terbaru'], 'pengguna' => $k['versi']['pengguna'],
+            ],
+            'aktivitas' => ['hari_ini' => $ini, 'kemarin' => $lalu],
+            'pengumuman' => $p ? [
+                'id' => (int) $p->id, 'judul' => $p->judul, 'jenis' => $p->jenis, 'dikirim_pada' => $p->dikirim_pada, 'dikirim_ke' => (int) $p->dikirim_ke, 'push_ke' => (int) $p->push_ke,
+                'dibaca' => (int) $p->dibaca_n, 'persen' => $p->dikirim_ke > 0 ? (int) round($p->dibaca_n / $p->dikirim_ke * 100) : 0,
+            ] : null,
+            'pengumuman_terjadwal' => (int) $k['pengumuman']['terjadwal'],
+        ]);
+    }
+
     // ---------- wajah login ----------
 
     public function wajah(Request $r): JsonResponse

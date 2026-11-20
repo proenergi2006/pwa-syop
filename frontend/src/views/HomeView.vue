@@ -3,6 +3,7 @@ import { t, ts } from '../i18n'
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import TankChart from '../components/TankChart.vue'
+import AdminSummary from '../components/AdminSummary.vue'
 import Icon from '../components/Icon.vue'
 import UserAvatar from '../components/UserAvatar.vue'
 import PenawaranItem from '../components/PenawaranItem.vue'
@@ -251,6 +252,7 @@ onBeforeUnmount(() => clearInterval(timer))
     </header>
 
     <div class="body">
+      <AdminSummary v-if="has('sistem')" />
       <section v-if="canApprove" class="card stat rise" :aria-label="t('home.summaryAria')" style="--i: 0">
         <div>
           <div class="lbl">{{ t('home.pendingTitle') }}</div>
