@@ -37,6 +37,33 @@ class LegacyFile
         return $i === false ? null : substr($stored, $i + strlen('files/uploaded_user/'));
     }
 
+    /**
+     * Simpan unggahan ke files/uploaded_user/<folder>/<nama> (folder dibuat bila belum ada). Nama sudah dibentuk pemanggil (tanpa ../).
+     * Mengembalikan false bila folder dasar tidak dapat ditulis (mount baca-saja).
+     */
+    public static function store(\Illuminate\Http\UploadedFile $file, string $relative): bool
+    {
+        $base = realpath(self::base().'/files/uploaded_user');
+        if (! $base || str_contains($relative, '..') || str_contains($relative, "\0")) {
+            return false;
+        }
+        $target = $base.'/'.ltrim($relative, '/');
+        $dir = dirname($target);
+        if (! is_dir($dir) && ! @mkdir($dir, 0775, true) && ! is_dir($dir)) {
+            return false;
+        }
+
+        return @move_uploaded_file($file->getPathname(), $target) || @copy($file->getPathname(), $target);
+    }
+
+    public static function delete(?string $relative): void
+    {
+        $path = $relative ? self::resolve($relative) : null;
+        if ($path) {
+            @unlink($path);
+        }
+    }
+
     public static function response(?string $relative, string $downloadName): BinaryFileResponse|\Illuminate\Http\JsonResponse
     {
         $path = $relative ? self::resolve($relative) : null;

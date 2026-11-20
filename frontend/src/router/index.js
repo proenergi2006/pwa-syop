@@ -47,6 +47,12 @@ const router = createRouter({
     { path: '/verifikasi-customer/:id(\\d+)', name: 'verifikasi-customer-detail', component: () => import('../views/VerifikasiCustomerDetailView.vue'), meta: { module: 'verifikasi_customer' } },
     { path: '/trucking-dr', name: 'trucking-dr', component: () => import('../views/TruckingDrView.vue'), meta: { nav: true, module: 'trucking_dr' } },
     { path: '/trucking-dr/:id(\\d+)', name: 'trucking-dr-detail', component: () => import('../views/TruckingDrDetailView.vue'), props: true, meta: { module: 'trucking_dr' } },
+    { path: '/po-supplier', name: 'po-supplier', component: () => import('../views/PoSupplierView.vue'), meta: { nav: true, module: 'po_supplier' } },
+    { path: '/po-supplier/:id(\\d+)', name: 'po-supplier-detail', component: () => import('../views/PoSupplierDetailView.vue'), props: true, meta: { module: 'po_supplier' } },
+    { path: '/po-supplier/:id(\\d+)/terima', name: 'po-supplier-terima', component: () => import('../views/PoSupplierTerimaView.vue'), props: true, meta: { module: 'po_supplier' } },
+    { path: '/po-supplier/:id(\\d+)/terima/form/:ri(\\d+)?', name: 'po-supplier-terima-form', component: () => import('../views/PoSupplierTerimaFormView.vue'), props: true, meta: { module: 'po_supplier' } },
+    { path: '/po-supplier/:id(\\d+)/loss-gain', name: 'po-supplier-loss-gain', component: () => import('../views/PoSupplierLossGainView.vue'), props: true, meta: { module: 'po_supplier' } },
+    { path: '/po-supplier/:id(\\d+)/cetak', name: 'po-supplier-cetak', component: () => import('../views/PoSupplierCetakView.vue'), props: true, meta: { module: 'po_supplier' } },
     { path: '/dr/:id(\\d+)', name: 'dr-detail', component: () => import('../views/DrDetailView.vue'), props: true, meta: { module: ['dr', 'dr_lihat'] } },
     { path: '/harga', name: 'harga', component: () => import('../views/HargaView.vue'), meta: { nav: true, module: 'harga' } },
     { path: '/harga/detail', name: 'harga-detail', component: () => import('../views/HargaDetailView.vue'), meta: { module: 'harga' } },
@@ -63,7 +69,7 @@ const router = createRouter({
 
 router.beforeEach((to, from) => {
   // Detail masuk dari kanan, kembali ke kiri; antar tab memudar naik.
-  navDir.value = ['approval-detail', 'shipping-detail', 'trucking-detail', 'oa-detail', 'forecast-cabang', 'dr-detail', 'trucking-dr-detail', 'po-detail', 'harga-detail', 'harga-form', 'produk-detail', 'produk-form', 'master-terminal-form', 'master-vendor-form'].includes(to.name) ? 'slide-left' : ['approval-detail', 'shipping-detail', 'trucking-detail', 'oa-detail', 'forecast-cabang', 'dr-detail', 'trucking-dr-detail', 'po-detail', 'harga-detail', 'harga-form', 'produk-detail', 'produk-form', 'master-terminal-form', 'master-vendor-form'].includes(from.name) ? 'slide-right' : 'fade-up'
+  navDir.value = ['approval-detail', 'shipping-detail', 'trucking-detail', 'oa-detail', 'forecast-cabang', 'dr-detail', 'trucking-dr-detail', 'po-detail', 'po-supplier-detail', 'po-supplier-cetak', 'po-supplier-terima', 'po-supplier-terima-form', 'po-supplier-loss-gain', 'harga-detail', 'harga-form', 'produk-detail', 'produk-form', 'master-terminal-form', 'master-vendor-form'].includes(to.name) ? 'slide-left' : ['approval-detail', 'shipping-detail', 'trucking-detail', 'oa-detail', 'forecast-cabang', 'dr-detail', 'trucking-dr-detail', 'po-detail', 'po-supplier-detail', 'po-supplier-cetak', 'po-supplier-terima', 'po-supplier-terima-form', 'po-supplier-loss-gain', 'harga-detail', 'harga-form', 'produk-detail', 'produk-form', 'master-terminal-form', 'master-vendor-form'].includes(from.name) ? 'slide-right' : 'fade-up'
   if (!to.meta.public && !tokenStore.get()) return { name: 'login' }
   if (to.name === 'login' && tokenStore.get()) return { name: 'home' }
   // Modul yang tidak tersedia untuk peran ini kembali ke Beranda.

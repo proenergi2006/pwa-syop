@@ -33,6 +33,9 @@ use App\Http\Controllers\ReservasiController;
 use App\Http\Controllers\SalesConfirmationController;
 use App\Http\Controllers\VerifikasiCustomerController;
 use App\Http\Controllers\PenggunaController;
+use App\Http\Controllers\PoSupplierController;
+use App\Http\Controllers\PoSupplierLossGainController;
+use App\Http\Controllers\PoSupplierTerimaController;
 use App\Http\Controllers\ProfilePhotoController;
 use App\Http\Controllers\PushController;
 use Illuminate\Support\Facades\Route;
@@ -94,6 +97,26 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::middleware('auth:sanctum')->get('badges', BadgeController::class);
+
+    Route::middleware(['auth:sanctum', ModuleAccess::class.':po_supplier'])->prefix('po-supplier')->group(function () {
+        Route::get('opsi', [PoSupplierController::class, 'opsi']);
+        Route::get('akun-accurate', [PoSupplierLossGainController::class, 'akun']);
+        Route::get('/', [PoSupplierController::class, 'index']);
+        Route::get('{id}', [PoSupplierController::class, 'show'])->whereNumber('id');
+        Route::get('{id}/cetak', [PoSupplierController::class, 'cetak'])->whereNumber('id');
+        Route::get('{id}/terima', [PoSupplierTerimaController::class, 'index'])->whereNumber('id');
+        Route::get('{id}/terima/form', [PoSupplierTerimaController::class, 'form'])->whereNumber('id');
+        Route::post('{id}/terima', [PoSupplierTerimaController::class, 'store'])->whereNumber('id')->middleware('throttle:30,1');
+        Route::get('{id}/terima/{ri}', [PoSupplierTerimaController::class, 'form'])->whereNumber(['id', 'ri']);
+        Route::put('{id}/terima/{ri}', [PoSupplierTerimaController::class, 'update'])->whereNumber(['id', 'ri'])->middleware('throttle:30,1');
+        Route::post('{id}/terima/{ri}', [PoSupplierTerimaController::class, 'update'])->whereNumber(['id', 'ri'])->middleware('throttle:30,1'); // multipart dengan _method=PUT
+        Route::delete('{id}/terima/{ri}', [PoSupplierTerimaController::class, 'destroy'])->whereNumber(['id', 'ri'])->middleware('throttle:30,1');
+        Route::get('{id}/terima/{ri}/riwayat', [PoSupplierTerimaController::class, 'riwayat'])->whereNumber(['id', 'ri']);
+        Route::get('{id}/loss-gain', [PoSupplierLossGainController::class, 'form'])->whereNumber('id');
+        Route::post('{id}/loss-gain', [PoSupplierLossGainController::class, 'store'])->whereNumber('id')->middleware('throttle:20,1');
+        Route::get('{id}/loss-gain/{gl}/lampiran', [PoSupplierLossGainController::class, 'lampiran'])->whereNumber(['id', 'gl']);
+        Route::get('{id}/terima/{ri}/lampiran', [PoSupplierTerimaController::class, 'lampiran'])->whereNumber(['id', 'ri']);
+    });
 
     Route::middleware(['auth:sanctum', ModuleAccess::class.':inventory'])->prefix('inventory')->group(function () {
         Route::get('/', [InventoryController::class, 'index']);

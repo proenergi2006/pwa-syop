@@ -26,6 +26,10 @@ return [
     // Folder induk web lama (berisi files/uploaded_user), dipasang baca-saja ke container. Dipakai untuk membuka lampiran.
     'web_files' => env('ORCA_WEB_FILES', '/var/www/legacy-web'),
 
+    // Kunci paramEncrypt web lama (heksa 64 karakter) dan alamat barcode di cetakan PO. Isi di .env, jangan commit kuncinya.
+    'param_key' => env('ORCA_PARAM_KEY'),
+    'po_barcode_url' => env('ORCA_PO_BARCODE_URL', 'http://barcode.proenergi.com/supplier/barcode/po/'),
+
     'module_roles' => [
         'penawaran' => [7, 6, 3, 21],
         'inventory' => [1, 21, 4, 5],
@@ -34,6 +38,7 @@ return [
         'po' => [21], // Verifikasi PO Supplier: tahap CEO (CFO menyusul)
         'dr' => [5], // Delivery Request: verifikasi Purchasing
         'dr_lihat' => [21], // Delivery Request (Procurement) hanya lihat: CEO. Tanpa verifikasi, simpan, revisi, atau kembalikan
+        'po_supplier' => [5], // PO Supplier (Procurement): daftar, detail, cetak; tambah/ubah, terima barang, close menyusul
         'master' => [5], // Master Terminal dan Master Vendor: Purchasing/Procurement
         'trucking_dr' => [5], // Trucking Delivery Request: verifikasi Purchasing/Procurement
         'sc' => [7], // Verifikasi Sales Confirmation: BM, per cabang

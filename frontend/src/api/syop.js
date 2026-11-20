@@ -83,6 +83,32 @@ export const reviseDr = (id, p = {}) => api.post(`/dr/${id}/revisi`, p).then((r)
 export const returnDr = (id, p = {}) => api.post(`/dr/${id}/kembali-dp`, p).then((r) => r.data)
 export const resetSplitDr = (id, p) => api.post(`/dr/${id}/reset-split`, p).then((r) => r.data)
 
+export const poSupplierOpsi = () => api.get('/po-supplier/opsi').then((r) => r.data)
+export const listPoSupplier = (params = {}) => api.get('/po-supplier', { params }).then((r) => r.data)
+export const getPoSupplier = (id) => api.get(`/po-supplier/${id}`).then((r) => r.data)
+export const terimaPoSupplier = (id) => api.get(`/po-supplier/${id}/terima`).then((r) => r.data)
+export const terimaForm = (id, ri) => api.get(ri ? `/po-supplier/${id}/terima/${ri}` : `/po-supplier/${id}/terima/form`).then((r) => r.data)
+export const terimaSimpan = (id, ri, p, file) => {
+  const fd = new FormData()
+  Object.entries(p).forEach(([k, v]) => v !== undefined && v !== null && fd.append(k, v))
+  if (file) fd.append('file_template', file, file.name)
+  if (ri) fd.append('_method', 'PUT') // PUT multipart tidak dibaca PHP; Laravel memakai _method pada POST
+  return api.post(ri ? `/po-supplier/${id}/terima/${ri}` : `/po-supplier/${id}/terima`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data)
+}
+export const terimaHapus = (id, ri) => api.delete(`/po-supplier/${id}/terima/${ri}`).then((r) => r.data)
+export const terimaRiwayat = (id, ri) => api.get(`/po-supplier/${id}/terima/${ri}/riwayat`).then((r) => r.data)
+export const terimaLampiran = (id, ri) => api.get(`/po-supplier/${id}/terima/${ri}/lampiran`, { responseType: 'blob' }).then((r) => r.data)
+export const lossGainForm = (id) => api.get(`/po-supplier/${id}/loss-gain`).then((r) => r.data)
+export const lossGainAkun = (q, page = 1) => api.get('/po-supplier/akun-accurate', { params: { q: q || undefined, page } }).then((r) => r.data)
+export const lossGainLampiran = (id, gl) => api.get(`/po-supplier/${id}/loss-gain/${gl}/lampiran`, { responseType: 'blob' }).then((r) => r.data)
+export const lossGainSimpan = (id, p, file) => {
+  const fd = new FormData()
+  Object.entries(p).forEach(([k, v]) => v !== undefined && v !== null && v !== '' && fd.append(k, v))
+  if (file) fd.append('file_template', file, file.name)
+  return api.post(`/po-supplier/${id}/loss-gain`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data)
+}
+export const cetakPoSupplier = (id, mode) => api.get(`/po-supplier/${id}/cetak`, { params: { mode } }).then((r) => r.data)
+
 export const listTruckingDr = (params = {}) => api.get('/trucking-dr', { params }).then((r) => r.data)
 export const getTruckingDr = (id) => api.get(`/trucking-dr/${id}`).then((r) => r.data)
 export const truckingDrPoSupplier = (id, q) => api.get(`/trucking-dr/${id}/po-supplier`, { params: { q: q || undefined } }).then((r) => r.data)

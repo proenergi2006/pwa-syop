@@ -14,6 +14,7 @@ services:
     volumes:
       - storage:/var/www/html/storage
       - ${ORCA_WEB_FILES_HOST:-./legacy-web}:/var/www/legacy-web:ro   # folder induk web lama (berisi files/uploaded_user), isi ORCA_WEB_FILES_HOST di .env root
+      - ${ORCA_WEB_FILES_HOST:-./legacy-web}/files/uploaded_user:/var/www/legacy-web/files/uploaded_user:rw   # hanya folder unggahan yang boleh ditulis (lampiran RI PO Supplier)
     healthcheck:
       test: ["CMD-SHELL", "pgrep php-fpm >/dev/null || exit 1"]
       interval: 30s
@@ -34,6 +35,7 @@ services:
     volumes:
       - storage:/var/www/html/storage
       - ${ORCA_WEB_FILES_HOST:-./legacy-web}:/var/www/legacy-web:ro   # folder induk web lama (berisi files/uploaded_user), isi ORCA_WEB_FILES_HOST di .env root
+      - ${ORCA_WEB_FILES_HOST:-./legacy-web}/files/uploaded_user:/var/www/legacy-web/files/uploaded_user:rw   # hanya folder unggahan yang boleh ditulis (lampiran RI PO Supplier)
     depends_on:
       - app
 
