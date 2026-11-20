@@ -78,6 +78,7 @@ const quick = [
   { key: 'pengumuman', label: 'pg.title', icon: 'bell', to: 'pengumuman', c: '#d93a45', mod: 'pengumuman' },
   { key: 'pengumuman_admin', label: 'pg.manage', icon: 'edit', to: 'pengumuman-admin', c: '#4f46e5', mod: 'pengumuman_admin' },
   { key: 'sistem', label: 'sys.title', icon: 'shield', to: 'sistem', c: '#475569', mod: 'sistem' },
+  { key: 'pengguna', label: 'usr.menu', icon: 'user', to: 'sistem', tab: 'pengguna', c: '#0f8b8d', mod: 'sistem' },
 ]
 // Tata letak menu diatur pengguna (urutan dan sembunyikan); disimpan per akun di perangkat ini.
 const LAYOUT_KEY = () => `orcax_menu_${auth.user?.id ?? 'x'}`
@@ -102,7 +103,7 @@ function saveArrange() {
 }
 function resetArrange() { draft.value = { order: allowed.value.map((x) => x.key), hidden: [] } }
 function goQuick(m) {
-  if (m.to) router.push({ name: m.to })
+  if (m.to) router.push({ name: m.to, query: m.tab ? { tab: m.tab } : undefined })
   else showToast(t('home.comingSoon', { name: t(m.label) }))
 }
 const loggingOut = ref(false)

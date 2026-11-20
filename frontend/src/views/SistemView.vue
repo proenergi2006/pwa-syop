@@ -2,6 +2,7 @@
 import { t } from '../i18n'
 import { useScrolled } from '../composables/useScrolled'
 import { ref } from 'vue'
+import { useRoute } from 'vue-router'
 import UserAvatar from '../components/UserAvatar.vue'
 import SistemKesehatan from '../components/sistem/SistemKesehatan.vue'
 import SistemWajah from '../components/sistem/SistemWajah.vue'
@@ -14,8 +15,10 @@ const scrolled = useScrolled()
 const TABS = [
   ['kesehatan', SistemKesehatan], ['pengguna', SistemPengguna], ['wajah', SistemWajah], ['log', SistemLog], ['akses', SistemAkses], ['pengaturan', SistemPengaturan],
 ]
+const route = useRoute()
 let saved = 'kesehatan'
 try { saved = sessionStorage.getItem('orcax_sistem_tab') || saved } catch { /* abaikan */ }
+if (TABS.some(([k]) => k === route.query.tab)) saved = route.query.tab // pintasan dari Menu/Beranda
 const tab = ref(TABS.some(([k]) => k === saved) ? saved : 'kesehatan')
 function pilih(k) {
   tab.value = k

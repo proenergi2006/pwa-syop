@@ -45,6 +45,7 @@ const modules = [
   { key: 'pengumuman', label: 'pg.title', icon: 'bell', to: 'pengumuman', tone: 'rose', mod: 'pengumuman' },
   { key: 'pengumuman_admin', label: 'pg.manage', icon: 'edit', to: 'pengumuman-admin', tone: 'indigo', mod: 'pengumuman_admin' },
   { key: 'sistem', label: 'sys.title', icon: 'shield', to: 'sistem', tone: 'indigo', mod: 'sistem' },
+  { key: 'pengguna', label: 'usr.menu', icon: 'user', to: 'sistem', tab: 'pengguna', tone: 'teal', mod: 'sistem' },
   { key: 'kirim', label: 'mod.kirim', icon: 'truck', tone: 'orange' },
   { key: 'invoice', label: 'mod.invoice', icon: 'invoice', tone: 'rose' },
 ]
@@ -67,7 +68,7 @@ const activeMods = computed(() => all.value.filter((m) => m.to && match(m)))
 const soon = computed(() => all.value.filter((m) => !m.to && match(m)))
 
 function go(m) {
-  if (m.to) router.push({ name: m.to })
+  if (m.to) router.push({ name: m.to, query: m.tab ? { tab: m.tab } : undefined })
   else showToast(t('home.comingSoon', { name: t(m.label) }))
 }
 </script>
