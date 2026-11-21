@@ -23,6 +23,21 @@ async function load() {
 const back = () => (window.history.length > 1 ? router.back() : router.replace({ name: 'po-supplier' }))
 const plain = (s) => (s ? String(s).replace(/<br\s*\/?>/gi, '\n').replace(/&quot;/g, '"').replace(/&#0?39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&') : '')
 const rp = (v, dec = 0) => 'Rp ' + angka(v, Number(v) % 1 ? Math.max(dec, 2) : dec)
+const konfirmHarga = ref(false)
+const busyHarga = ref(false)
+const errHarga = ref('')
+// Seperti web: tombol Perubahan Harga hanya bila PO sudah ada RI, belum close/cancel, harga Final, dan belum pernah diubah harganya.
+const statusHarga = computed(() => {
+  const x = d.value
+  if (!x || x.is_close || x.is_cancel || !(x.vol_ri > 0) || x.jenis_harga === null) return null
+  if (x.jenis_harga === 2) return 'sementara'
+  return x.jenis_harga === 1 && ![1, 2].includes(x.is_price_changed ?? 0) ? 'bisa' : null
+})
+async function jadiSementara() {
+  busyHarga.value = true
+  errHarga.value = ''
+  try { await syop.poHargaSementara(props.id); konfirmHarga.value = false; await load() } catch (e) { errHarga.value = errorMessage(e) } finally { busyHarga.value = false }
+}
 const bisaCetak = computed(() => d.value && (d.value.aksi.includes('cetak') || d.value.aksi.includes('cetak_penuh')))
 const bisaTerima = computed(() => d.value && ['terima', 'ri', 'lihat'].some((k) => d.value.aksi.includes(k)))
 const cetak = (mode) => router.push({ name: 'po-supplier-cetak', params: { id: props.id }, query: { mode } })
@@ -101,9 +116,40 @@ onMounted(load)
         </div>
       </Collapse>
 
+      <section v-if="statusHarga === 'bisa'" class="card">
+        <h2 class="sec-t">Perubahan harga</h2>
+        <p class="muted">PO sudah ada penerimaan. Jenis harga akan diubah menjadi Harga Sementara sebelum harga bisa diperbarui.</p>
+        <button class="btn btn-ghost" :disabled="busyHarga" @click="konfirmHarga = true"><Icon name="edit" :size="18" /> Perubahan Harga</button>
+      </section>
+      <section v-else-if="statusHarga === 'sementara'" class="card warnbox">
+        <h2 class="sec-t">Harga Sementara</h2>
+        <p class="muted">Harga Dasar PO ini perlu diperbarui agar sesuai dengan data terbaru karena jenis harga adalah Harga Sementara.</p>
+        <button class="btn btn-primary" @click="router.push({ name: 'po-supplier-ubah-harga', params: { id } })"><Icon name="edit" :size="18" /> Ubah harga</button>
+      </section>
+
+      <div v-if="konfirmHarga" class="sheet-back" @click.self="!busyHarga && (konfirmHarga = false)">
+        <div class="sheet" role="dialog" aria-modal="true">
+          <div class="grab" />
+          <h2 class="sheet-t">Perubahan harga PO?</h2>
+          <p class="muted" style="margin:6px 0 12px">Jenis harga PO akan diubah menjadi Harga Sementara.</p>
+          <p v-if="errHarga" class="red">{{ errHarga }}</p>
+          <div class="sheet-act"><button class="btn btn-ghost" :disabled="busyHarga" @click="konfirmHarga = false">Batal</button><button class="btn btn-primary" :disabled="busyHarga" @click="jadiSementara">{{ busyHarga ? 'Menyimpan…' : 'Simpan' }}</button></div>
+        </div>
+      </div>
+
+      <section v-if="d.aksi.includes('edit')" class="card">
+        <h2 class="sec-t">Ubah PO</h2>
+        <button class="btn btn-ghost" @click="router.push({ name: 'po-supplier-ubah', params: { id } })"><Icon name="edit" :size="18" /> Ubah data PO</button>
+      </section>
+
       <section v-if="bisaTerima" class="card">
         <h2 class="sec-t">Penerimaan barang (RI)</h2>
         <button class="btn btn-primary" @click="router.push({ name: 'po-supplier-terima', params: { id } })"><Icon name="truck" :size="18" /> {{ d.aksi.includes('terima') ? 'Terima barang' : 'Lihat RI' }}</button>
+      </section>
+
+      <section v-if="d.aksi.includes('close')" class="card">
+        <h2 class="sec-t">Close PO</h2>
+        <button class="btn btn-ghost" @click="router.push({ name: 'po-supplier-close', params: { id } })"><Icon name="check" :size="18" /> Close PO</button>
       </section>
 
       <section v-if="bisaCetak" class="card">
@@ -113,7 +159,7 @@ onMounted(load)
           <button class="btn btn-ghost" @click="cetak('gainloss')"><Icon name="doc" :size="18" /> Dengan Gain &amp; Loss</button>
         </div>
       </section>
-      <p class="muted foot">Tambah/ubah PO, loss/gain, shipping request, dan close PO belum tersedia di PWA.</p>
+      <p class="muted foot">Shipping request belum tersedia di PWA.</p>
     </template>
   </div>
 </template>
@@ -137,4 +183,6 @@ onMounted(load)
 .sec-t { margin: 0 0 10px; font-size: 15px; }
 .acts { display: grid; gap: 10px; }
 .foot { text-align: center; margin: 12px 0 24px; }
+.warnbox { background: #fff3cd; border-color: #ffc107; }
+.red { color: var(--red); font-size: 13px; }
 </style>

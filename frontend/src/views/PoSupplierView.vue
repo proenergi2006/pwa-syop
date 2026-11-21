@@ -61,6 +61,8 @@ onMounted(() => { load(1); syop.poSupplierOpsi().then((o) => { opsi.value = o })
       <button class="fbtn" :class="{ on: active }" :aria-label="t('inv.filter')" @click="Object.assign(draft, f); sheet = true"><Icon name="filter" :size="20" /><b v-if="active">{{ active }}</b></button>
     </div>
 
+    <button class="btn btn-primary btn-block" style="margin-bottom:14px" @click="router.push({ name: 'po-supplier-baru' })"><Icon name="plus" :size="18" /> Tambah PO</button>
+
     <StateBox v-if="error" icon="alert" :title="t('common.failedLoad')" :text="error" :action="t('common.retry')" @action="load(1)" />
     <div v-else-if="loading" class="stack"><div v-for="i in 3" :key="i" class="skel" style="height:190px" /></div>
     <StateBox v-else-if="!items.length" icon="check" title="Tidak ada PO" text="Tidak ada PO Supplier yang cocok." />

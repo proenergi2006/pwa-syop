@@ -107,6 +107,16 @@ export const lossGainSimpan = (id, p, file) => {
   if (file) fd.append('file_template', file, file.name)
   return api.post(`/po-supplier/${id}/loss-gain`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data)
 }
+export const poFormOpsi = () => api.get('/po-supplier/form-opsi').then((r) => r.data)
+export const poBarangAccurate = (q) => api.get('/po-supplier/barang-accurate', { params: { q: q || undefined } }).then((r) => r.data)
+export const poHitung = (p) => api.post('/po-supplier/hitung', p).then((r) => r.data)
+export const poUbahForm = (id) => api.get(`/po-supplier/${id}/ubah`).then((r) => r.data)
+export const poSimpan = (id, p) => (id ? api.put(`/po-supplier/${id}`, p) : api.post('/po-supplier', p)).then((r) => r.data)
+export const poHargaSementara = (id) => api.post(`/po-supplier/${id}/harga-sementara`).then((r) => r.data)
+export const poUbahHargaForm = (id) => api.get(`/po-supplier/${id}/ubah-harga`).then((r) => r.data)
+export const poSimpanHarga = (id, p) => api.put(`/po-supplier/${id}/ubah-harga`, p).then((r) => r.data)
+export const poCloseForm = (id) => api.get(`/po-supplier/${id}/close`).then((r) => r.data)
+export const poClose = (id, p) => api.post(`/po-supplier/${id}/close`, p).then((r) => r.data)
 export const cetakPoSupplier = (id, mode) => api.get(`/po-supplier/${id}/cetak`, { params: { mode } }).then((r) => r.data)
 
 export const listTruckingDr = (params = {}) => api.get('/trucking-dr', { params }).then((r) => r.data)

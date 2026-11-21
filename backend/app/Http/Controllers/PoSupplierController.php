@@ -59,7 +59,7 @@ class PoSupplierController extends Controller
     }
 
     /** Tombol aksi per baris untuk Procurement (peran 5), mengikuti urutan dan syarat di datatable web. */
-    private static function aksi($p, ?object $ship, float $volTerima): array
+    public static function aksi($p, ?object $ship, float $volTerima): array
     {
         $out = [];
         $add = function (string $k) use (&$out) {
@@ -130,7 +130,7 @@ class PoSupplierController extends Controller
         }, 'warna' => 'primary'];
     }
 
-    private static function ship(int $idPo): ?object
+    public static function ship(int $idPo): ?object
     {
         if (! Schema::hasTable('new_pro_inventory_vendor_po_ship_req')) {
             return null;
@@ -233,7 +233,7 @@ class PoSupplierController extends Controller
             'vendor' => $p->nama_vendor, 'terminal' => self::terminal($p), 'produk' => $p->jenis_produk.' - '.$p->merk_dagang,
             'jenis_kirim' => (int) $p->jenis_kirim, 'terms' => $p->terms, 'terms_day' => $p->terms_day, 'kd_tax' => $p->kd_tax,
             'volume_po' => (float) $p->volume_po, 'harga_po' => (float) $p->harga_po, 'harga_tebus' => (float) $p->harga_tebus,
-            'jenis_harga' => $has('jenis_harga') ? (int) ($p->jenis_harga ?? 0) : null,
+            'jenis_harga' => $has('jenis_harga') ? (int) ($p->jenis_harga ?? 0) : null, 'is_price_changed' => $has('is_price_changed') ? (int) ($p->is_price_changed ?? 0) : null,
             'kategori_oa' => (int) $p->kategori_oa, 'is_biaya' => $p->is_biaya, 'kategori_plat' => $p->kategori_plat, 'ongkos_angkut' => (float) $p->ongkos_angkut,
             'iuran_migas' => (int) $p->iuran_migas === 1, 'nominal_migas' => (float) $p->nominal_migas,
             'subtotal' => (float) $p->subtotal, 'ppn_11' => (float) $p->ppn_11, 'dpp_11_12' => (float) $p->dpp_11_12, 'ppn_12' => (float) $p->ppn_12,

@@ -33,7 +33,9 @@ use App\Http\Controllers\ReservasiController;
 use App\Http\Controllers\SalesConfirmationController;
 use App\Http\Controllers\VerifikasiCustomerController;
 use App\Http\Controllers\PenggunaController;
+use App\Http\Controllers\PoSupplierCloseController;
 use App\Http\Controllers\PoSupplierController;
+use App\Http\Controllers\PoSupplierFormController;
 use App\Http\Controllers\PoSupplierLossGainController;
 use App\Http\Controllers\PoSupplierTerimaController;
 use App\Http\Controllers\ProfilePhotoController;
@@ -101,6 +103,17 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:sanctum', ModuleAccess::class.':po_supplier'])->prefix('po-supplier')->group(function () {
         Route::get('opsi', [PoSupplierController::class, 'opsi']);
         Route::get('akun-accurate', [PoSupplierLossGainController::class, 'akun']);
+        Route::get('form-opsi', [PoSupplierFormController::class, 'opsi']);
+        Route::get('barang-accurate', [PoSupplierFormController::class, 'barang']);
+        Route::post('hitung', [PoSupplierFormController::class, 'hitung']);
+        Route::post('/', [PoSupplierFormController::class, 'store'])->middleware('throttle:20,1');
+        Route::get('{id}/close', [PoSupplierCloseController::class, 'form'])->whereNumber('id');
+        Route::post('{id}/close', [PoSupplierCloseController::class, 'store'])->whereNumber('id')->middleware('throttle:20,1');
+        Route::get('{id}/ubah', [PoSupplierFormController::class, 'ubah'])->whereNumber('id');
+        Route::post('{id}/harga-sementara', [PoSupplierFormController::class, 'hargaSementara'])->whereNumber('id')->middleware('throttle:20,1');
+        Route::get('{id}/ubah-harga', [PoSupplierFormController::class, 'ubahHarga'])->whereNumber('id');
+        Route::put('{id}/ubah-harga', [PoSupplierFormController::class, 'simpanHarga'])->whereNumber('id')->middleware('throttle:20,1');
+        Route::put('{id}', [PoSupplierFormController::class, 'update'])->whereNumber('id')->middleware('throttle:20,1');
         Route::get('/', [PoSupplierController::class, 'index']);
         Route::get('{id}', [PoSupplierController::class, 'show'])->whereNumber('id');
         Route::get('{id}/cetak', [PoSupplierController::class, 'cetak'])->whereNumber('id');
