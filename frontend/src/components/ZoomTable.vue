@@ -4,7 +4,13 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import Icon from './Icon.vue'
 
-const props = defineProps({ minZoom: { type: Number, default: 0.6 }, maxZoom: { type: Number, default: 3 }, fullStart: { type: Number, default: 1.4 } })
+const props = defineProps({
+  minZoom: { type: Number, default: 0.6 }, maxZoom: { type: Number, default: 3 }, fullStart: { type: Number, default: 1.4 },
+  maxHeight: { type: String, default: '560px' }, // tinggi gulir bila tidak layar penuh ('none' = tanpa batas)
+  bleed: { type: Boolean, default: true }, // true: melebar sampai tepi kartu (margin -16px) seperti tabel RSSP
+  hint: { type: Boolean, default: true },
+})
+const gaya = computed(() => ({ maxHeight: props.maxHeight, margin: props.bleed ? '0 -16px' : '0', padding: props.bleed ? '0 16px' : '0' }))
 const LANGKAH = [0.6, 0.75, 0.9, 1, 1.25, 1.5, 2, 2.5, 3]
 const zInline = ref(1)
 const zFull = ref(props.fullStart)
@@ -66,8 +72,8 @@ onBeforeUnmount(() => { document.documentElement.style.overflow = '' })
         <button type="button" class="zb" :disabled="z >= maxZoom" aria-label="Perbesar" @click="ubah(1)">+</button>
         <button type="button" class="zb zfull" aria-label="Layar penuh" @click="bukaPenuh"><Icon name="grid" :size="16" /> Layar penuh</button>
       </div>
-      <div :ref="ikat" class="zscroll"><div class="zisi" :style="{ zoom: z }"><slot /></div></div>
-      <p class="zhint">Cubit dengan dua jari atau pakai tombol + / − untuk memperbesar.</p>
+      <div :ref="ikat" class="zscroll" :style="gaya"><div class="zisi" :style="{ zoom: z }"><slot /></div></div>
+      <p v-if="hint" class="zhint">Cubit dengan dua jari atau pakai tombol + / − untuk memperbesar.</p>
     </template>
     <Teleport v-else to="body">
       <div class="zover" role="dialog" aria-modal="true" aria-label="Tabel layar penuh">
@@ -90,7 +96,7 @@ onBeforeUnmount(() => { document.documentElement.style.overflow = '' })
 .zb:disabled { opacity: 0.4; }
 .zp { font-size: 14px; min-width: 64px; font-variant-numeric: tabular-nums; }
 .zfull { margin-left: auto; font-size: 13px; font-weight: 600; }
-.zscroll { overflow: auto; max-height: 560px; margin: 0 -16px; padding: 0 16px; border-top: 1px solid var(--line); -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.zscroll { overflow: auto; border-top: 1px solid var(--line); -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 .zhint { margin: 6px 0 0; font-size: 11.5px; color: var(--muted); }
 .zover { position: fixed; inset: 0; z-index: 9000; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); }
 .zbar-full { padding: calc(env(safe-area-inset-top, 0px) + 8px) calc(env(safe-area-inset-right, 0px) + 12px) 8px calc(env(safe-area-inset-left, 0px) + 12px); background: var(--card); border-bottom: 1px solid var(--line); }

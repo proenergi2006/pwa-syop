@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { ringkas } from '../../utils/chart'
+import ZoomTable from '../ZoomTable.vue'
 
 // Peta panas baris (terminal/cabang) x hari. Nilai negatif ditandai merah. Ketuk sel untuk rincian.
 const props = defineProps({ rows: Array, weekend: { type: Array, default: () => [] }, color: { type: String, default: '#0a66e8' }, sel: { type: Number, default: -1 } })
@@ -12,7 +13,7 @@ const n = computed(() => props.rows[0]?.vals.length || 0)
 
 <template>
   <div class="dh" :style="{ '--hc': color, '--cols': n }">
-    <div class="scroll">
+    <ZoomTable max-height="none">
       <div class="grid head">
         <span class="nm" />
         <span v-for="i in n" :key="i" class="mo" :class="{ we: weekend[i - 1], on: sel === i - 1 }">{{ i }}</span>
@@ -23,7 +24,7 @@ const n = computed(() => props.rows[0]?.vals.length || 0)
           :style="{ background: v === 0 ? 'transparent' : `color-mix(in srgb, ${v < 0 ? 'var(--red)' : 'var(--hc)'} ${pct(v)}%, var(--card))`, color: pct(v) > 52 ? '#fff' : 'var(--ink)' }"
           :aria-label="`${r.nama} ${i + 1}`" @click="emit('pick', { id: r.id, i })">{{ v === 0 ? '' : ringkas(v, 0) }}</button>
       </div>
-    </div>
+    </ZoomTable>
   </div>
 </template>
 

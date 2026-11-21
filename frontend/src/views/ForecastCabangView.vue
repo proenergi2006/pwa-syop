@@ -1,4 +1,5 @@
 <script setup>
+import ZoomTable from '../components/ZoomTable.vue'
 import { t, numLocale } from '../i18n'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -141,7 +142,7 @@ onMounted(load)
         <section class="card box">
           <h2>{{ t('fc.sec.customer') }} <small>({{ t('fc.kl') }})</small></h2>
           <p v-if="!d.customers.length" class="tip">{{ t('fc.customerNone') }}</p>
-          <div v-else class="gridw">
+          <ZoomTable v-else :bleed="false" max-height="420px">
             <table class="gt">
               <thead>
                 <tr>
@@ -165,7 +166,7 @@ onMounted(load)
                 </tr>
               </tfoot>
             </table>
-          </div>
+          </ZoomTable>
         </section>
 
         <!-- alokasi -->

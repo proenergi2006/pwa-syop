@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { bulanPendek, ringkas } from '../../utils/chart'
 import { t } from '../../i18n'
+import ZoomTable from '../ZoomTable.vue'
 
 // Peta panas marketing x bulan. Ketuk sel berisi untuk membuka rincian.
 const props = defineProps({ rows: Array, color: { type: String, default: '#0a66e8' }, limit: { type: Number, default: 12 }, sel: { type: Number, default: 0 } })
@@ -15,7 +16,7 @@ const tot = computed(() => Array.from({ length: 12 }, (_, i) => props.rows.reduc
 
 <template>
   <div class="hg" :style="{ '--hc': color }">
-    <div class="scroll">
+    <ZoomTable max-height="none">
       <div class="grid head">
         <span class="nm" />
         <span v-for="i in 12" :key="i" class="mo">{{ bulanPendek(i - 1).slice(0, 3) }}</span>
@@ -33,7 +34,7 @@ const tot = computed(() => Array.from({ length: 12 }, (_, i) => props.rows.reduc
         <span v-for="(v, i) in tot" :key="i" class="c s">{{ v > 0 ? ringkas(v, 0) : '' }}</span>
         <b class="tt">{{ ringkas(tot.reduce((a, b) => a + b, 0), 0) }}</b>
       </div>
-    </div>
+    </ZoomTable>
     <button v-if="rows.length > limit" class="btn btn-ghost btn-block" style="margin-top:8px" @click="all = !all">{{ all ? t('rm.less') : t('rm.more', { n: rows.length }) }}</button>
   </div>
 </template>
