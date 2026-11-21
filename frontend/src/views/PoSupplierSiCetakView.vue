@@ -1,4 +1,5 @@
 <script setup>
+import PrintShell from '../components/PrintShell.vue'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import * as syop from '../api/syop'
@@ -14,13 +15,8 @@ onMounted(async () => { try { c.value = await syop.shipCetak(props.id, props.sr)
 </script>
 
 <template>
+  <PrintShell :ready="!!c" :error="error" :judul="c ? `Shipping Instruction ${c.nomor}` : ''" @back="back" @print="imprimir">
   <div class="cetak">
-    <div class="bar no-print">
-      <button class="btn btn-ghost" @click="back">Kembali</button>
-      <button class="btn btn-primary" :disabled="!c" @click="imprimir">Cetak / Simpan PDF</button>
-    </div>
-    <p v-if="error" class="no-print err">{{ error }}</p>
-    <p v-else-if="!c" class="no-print">Memuat…</p>
     <div v-if="c" class="kertas">
       <img class="logo" src="/img/logo-kiri-penawaran.png" alt="" />
       <h2 class="judul">Shipping Instruction</h2>
@@ -45,13 +41,12 @@ onMounted(async () => { try { c.value = await syop.shipCetak(props.id, props.sr)
       <p>{{ c.jabatan }}</p>
     </div>
   </div>
+  </PrintShell>
 </template>
 
 <style>
 @media print {
-  #app > *:not(.cetak) { display: none !important; }
-  .no-print { display: none !important; }
-  .cetak { padding: 0 !important; background: #fff !important; }
+  .cetak { padding: 0 !important; background: #fff !important; min-height: 0 !important; }
   .kertas { box-shadow: none !important; margin: 0 !important; width: auto !important; }
   @page { size: A4; margin: 10mm 20mm 20mm; }
 }

@@ -1,4 +1,5 @@
 <script setup>
+import PrintShell from '../components/PrintShell.vue'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import * as syop from '../api/syop'
@@ -14,11 +15,8 @@ onMounted(async () => { try { c.value = await syop.tiCetakReceived(props.id) } c
 </script>
 
 <template>
+  <PrintShell :ready="!!c" :error="error" :judul="c ? `Trucking Instruction Received ${c.nomor}` : ''" hint="Cetakan berorientasi landscape; pilih &quot;Landscape&quot; pada dialog cetak bila belum otomatis." @back="back" @print="imprimir">
   <div class="cetak">
-    <div class="bar no-print"><button class="btn btn-ghost" @click="back">Kembali</button><button class="btn btn-primary" :disabled="!c" @click="imprimir">Cetak / Simpan PDF</button></div>
-    <p class="no-print muted">Cetakan berorientasi landscape; pilih "Landscape" pada dialog cetak bila belum otomatis.</p>
-    <p v-if="error" class="no-print err">{{ error }}</p>
-    <p v-else-if="!c" class="no-print">Memuat…</p>
     <div v-if="c" class="kertas">
       <div class="head">
         <div class="k1"><img src="/img/logo-kiri-penawaran.png" alt="" /></div>
@@ -35,13 +33,12 @@ onMounted(async () => { try { c.value = await syop.tiCetakReceived(props.id) } c
       </table>
     </div>
   </div>
+  </PrintShell>
 </template>
 
 <style>
 @media print {
-  #app > *:not(.cetak) { display: none !important; }
-  .no-print { display: none !important; }
-  .cetak { padding: 0 !important; background: #fff !important; }
+  .cetak { padding: 0 !important; background: #fff !important; min-height: 0 !important; }
   .kertas { box-shadow: none !important; margin: 0 !important; width: auto !important; }
   @page { size: A4 landscape; margin: 10mm; }
 }

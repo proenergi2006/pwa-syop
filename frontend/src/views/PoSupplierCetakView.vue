@@ -1,4 +1,5 @@
 <script setup>
+import PrintShell from '../components/PrintShell.vue'
 import { computed, onMounted, ref } from 'vue'
 import qrcode from 'qrcode-generator'
 import { useRoute, useRouter } from 'vue-router'
@@ -26,13 +27,8 @@ onMounted(async () => {
 </script>
 
 <template>
+  <PrintShell :ready="!!c" :error="error" :judul="c ? `PO ${c.kepala.nomor_po}${c.mode === 'gainloss' ? ' Gain Loss' : ''}` : ''" @back="back" @print="imprimir">
   <div class="cetak">
-    <div class="bar no-print">
-      <button class="btn btn-ghost" @click="back">Kembali</button>
-      <button class="btn btn-primary" :disabled="!c" @click="imprimir">Cetak / Simpan PDF</button>
-    </div>
-    <p v-if="error" class="no-print err">{{ error }}</p>
-    <p v-else-if="!c" class="no-print">Memuat…</p>
     <div v-for="(h, n) in (c?.halaman || [])" :key="n" class="kertas">
       <table class="logo"><tr><td class="l1"><img src="/img/logo-kiri-penawaran.png" alt="" /></td><td class="l2"></td><td class="l3"><img src="/img/logo-kanan-penawaran.png" alt="" /></td></tr></table>
       <div class="judul"><h2>PURCHASE ORDER</h2><hr /></div>
@@ -70,13 +66,12 @@ onMounted(async () => {
       <p class="kaki"><i>(This form is valid with sign by computerized system)</i><br /><small>Printed by {{ c.kepala.dicetak }}</small></p>
     </div>
   </div>
+  </PrintShell>
 </template>
 
 <style>
 @media print {
-  #app > *:not(.cetak) { display: none !important; }
-  .no-print { display: none !important; }
-  .cetak { padding: 0 !important; background: #fff !important; }
+  .cetak { padding: 0 !important; background: #fff !important; min-height: 0 !important; }
   .kertas { box-shadow: none !important; margin: 0 !important; page-break-after: always; width: auto !important; }
   @page { size: A4; margin: 10mm; }
 }
