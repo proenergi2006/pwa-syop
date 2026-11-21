@@ -14,6 +14,7 @@ import { errorMessage } from '../api/client'
 import { useAuth } from '../stores/auth'
 import { showToast } from '../composables/useToast'
 import { openFile } from '../utils/openFile'
+import ZoomTable from '../components/ZoomTable.vue'
 import { angka, tanggal } from '../utils/format'
 import { bulanPanjang, jumlah, ringkas } from '../utils/chart'
 
@@ -382,7 +383,7 @@ const back = () => (window.history.length > 1 ? router.back() : router.replace({
               <template v-if="tableOpen && table">
                 <p class="hint">{{ t('rs.t.legend') }}</p>
                 <p v-if="canInput" class="hint in-hint">{{ t('rs.in.hint') }}</p>
-                <div class="tscroll">
+                <ZoomTable>
                   <table class="rt">
                     <thead>
                       <tr>
@@ -410,7 +411,7 @@ const back = () => (window.history.length > 1 ? router.back() : router.replace({
                       </tr>
                     </tbody>
                   </table>
-                </div>
+                </ZoomTable>
               </template>
             </div>
           </div>
