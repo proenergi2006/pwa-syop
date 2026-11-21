@@ -259,3 +259,12 @@ export const penggunaResetSandi = (id) => api.post(`/sistem/pengguna/${id}/reset
 export const sistemAkses = () => api.get('/sistem/akses').then((r) => r.data)
 export const sistemSimpanAkses = (modul, roles) => api.put(`/sistem/akses/${modul}`, { roles }).then((r) => r.data)
 export const sistemResetAkses = (modul) => api.delete(`/sistem/akses/${modul}`).then((r) => r.data)
+
+export const adjList = (params = {}) => api.get('/adjustment-stock', { params }).then((r) => r.data)
+export const adjOpsi = () => api.get('/adjustment-stock/opsi').then((r) => r.data)
+export const adjShow = (id) => api.get(`/adjustment-stock/${id}`).then((r) => r.data)
+export const adjHapus = (id) => api.delete(`/adjustment-stock/${id}`).then((r) => r.data)
+export const adjFormOpsi = () => api.get('/adjustment-stock/form-opsi').then((r) => r.data)
+export const adjTerminal = (produk) => api.get('/adjustment-stock/terminal', { params: { produk } }).then((r) => r.data)
+export const adjPoTransfer = (terminal, produk) => api.get('/adjustment-stock/po-transfer', { params: { terminal, produk } }).then((r) => r.data)
+export const adjSimpan = (p) => api.post('/adjustment-stock', p).then((r) => r.data)

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdjustmentStockController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BadgeController;
 use App\Http\Controllers\DrController;
@@ -158,6 +159,17 @@ Route::prefix('v1')->group(function () {
         Route::get('{id}/prd/{prd}/sj', [TruckingTiTerimaController::class, 'lampiran'])->whereNumber(['id', 'prd']);
         Route::get('{id}/cetak-received', [TruckingTiTerimaController::class, 'cetak'])->whereNumber('id');
         Route::get('{id}/prd/{prd}/accurate', [TruckingTiTerimaController::class, 'detailAccurate'])->whereNumber(['id', 'prd']);
+    });
+
+    Route::middleware(['auth:sanctum', ModuleAccess::class.':adjustment_stock'])->prefix('adjustment-stock')->group(function () {
+        Route::get('opsi', [AdjustmentStockController::class, 'opsi']);
+        Route::get('form-opsi', [AdjustmentStockController::class, 'formOpsi']);
+        Route::get('terminal', [AdjustmentStockController::class, 'terminal']);
+        Route::get('po-transfer', [AdjustmentStockController::class, 'poTransfer']);
+        Route::post('/', [AdjustmentStockController::class, 'store'])->middleware('throttle:20,1');
+        Route::get('/', [AdjustmentStockController::class, 'index']);
+        Route::get('{id}', [AdjustmentStockController::class, 'show'])->whereNumber('id');
+        Route::delete('{id}', [AdjustmentStockController::class, 'destroy'])->whereNumber('id')->middleware('throttle:20,1');
     });
 
     Route::middleware(['auth:sanctum', ModuleAccess::class.':inventory'])->prefix('inventory')->group(function () {

@@ -62,6 +62,7 @@ const quick = [
   { key: 'dr', label: 'home.m.dr', icon: 'cart', to: 'dr', c: '#6d28d9', mod: ['dr', 'dr_lihat'] },
   { key: 'po_supplier', label: 'home.m.poSupplier', icon: 'cart', to: 'po-supplier', c: '#6d28d9', mod: 'po_supplier' },
   { key: 'trucking_ti', label: 'home.m.trucking', icon: 'truck', to: 'trucking-ti', c: '#e07400', mod: 'trucking_ti' },
+  { key: 'adjustment_stock', label: 'home.m.adjustment', icon: 'box', to: 'adjustment-stock', c: '#0f8b8d', mod: 'adjustment_stock' },
   { key: 'trucking_dr', label: 'home.m.truckingDr', icon: 'truck', to: 'trucking-dr', c: '#e07400', mod: 'trucking_dr' },
   { key: 'verifikasi_customer', label: 'vc.title', icon: 'doc', to: 'verifikasi-customer', c: 'var(--accent)', mod: 'verifikasi_customer' },
   { key: 'master_terminal', label: 'home.m.terminal', icon: 'box', to: 'master-terminal', c: '#0f8b8d', mod: 'master' },

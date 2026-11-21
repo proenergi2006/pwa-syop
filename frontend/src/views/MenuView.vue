@@ -29,6 +29,7 @@ const modules = [
   { key: 'master_vendor', label: 'home.m.vendor', icon: 'cart', to: 'master-vendor', tone: 'violet', mod: 'master' },
   { key: 'po_supplier', label: 'home.m.poSupplier', icon: 'cart', to: 'po-supplier', tone: 'violet', mod: 'po_supplier' },
   { key: 'trucking_ti', label: 'home.m.trucking', icon: 'truck', to: 'trucking-ti', tone: 'orange', mod: 'trucking_ti' },
+  { key: 'adjustment_stock', label: 'home.m.adjustment', icon: 'box', to: 'adjustment-stock', tone: 'teal', mod: 'adjustment_stock' },
   { key: 'trucking_dr', label: 'home.m.truckingDr', icon: 'truck', to: 'trucking-dr', tone: 'orange', mod: 'trucking_dr' },
   { key: 'sc', label: 'sc.title', icon: 'invoice', to: 'sc', tone: 'teal', mod: 'sc' },
   { key: 'permohonan', label: 'pm.title', icon: 'doc', to: 'permohonan', tone: 'indigo', mod: 'permohonan' },
@@ -62,7 +63,7 @@ const has = (m) => !m || !Array.isArray(auth.user?.modules) || (Array.isArray(m)
 // OM/BM (hanya modul penawaran): menu lain, termasuk yang "segera hadir", disembunyikan.
 const limited = computed(() => {
   const mods = auth.user?.modules
-  return Array.isArray(mods) && mods.every((x) => ['penawaran', 'stok_terminal', 'reservasi', 'mobil', 'inventory', 'dr', 'po_supplier', 'trucking_ti', 'report_procurement', 'trucking_dr', 'master', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'report', 'rssp', 'forecast_om', 'forecast_bm', 'rssp_input', 'pengumuman', 'pengumuman_admin', 'sistem'].includes(x))
+  return Array.isArray(mods) && mods.every((x) => ['penawaran', 'stok_terminal', 'reservasi', 'mobil', 'inventory', 'dr', 'po_supplier', 'trucking_ti', 'adjustment_stock', 'report_procurement', 'trucking_dr', 'master', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'report', 'rssp', 'forecast_om', 'forecast_bm', 'rssp_input', 'pengumuman', 'pengumuman_admin', 'sistem'].includes(x))
 })
 const all = computed(() => [...modules, ...tools].filter((m) => (m.mod ? has(m.mod) : m.key === 'riwayat' ? has('penawaran') : !limited.value)))
 // Hanya yang sudah bisa dipakai tampil sebagai kartu; sisanya diringkas sebagai daftar "Segera hadir".

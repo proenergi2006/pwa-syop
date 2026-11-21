@@ -40,6 +40,7 @@ return [
         'dr_lihat' => [21], // Delivery Request (Procurement) hanya lihat: CEO. Tanpa verifikasi, simpan, revisi, atau kembalikan
         'report_procurement' => [5], // Report Procurement: Rekap Loaded Truck/Kapal, History Pemotongan Stock Truck dan Operasional (BPUJ)
         'trucking_ti' => [5], // Trucking Instruction Request (Procurement): daftar, tambah, ubah, cancel, cetak, terima
+        'adjustment_stock' => [5], // Adjustment Stock (Procurement): daftar, detail, hapus; tambah menyusul
         'po_supplier' => [5], // PO Supplier (Procurement): daftar, detail, cetak; tambah/ubah, terima barang, close menyusul
         'master' => [5], // Master Terminal dan Master Vendor: Purchasing/Procurement
         'trucking_dr' => [5], // Trucking Delivery Request: verifikasi Purchasing/Procurement
