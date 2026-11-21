@@ -236,6 +236,7 @@ onBeforeUnmount(() => clearInterval(timer))
       <span class="orb" style="width:150px;height:150px;right:-34px;top:-40px;background:#e50e30;opacity:.55" />
       <span class="orb" style="width:130px;height:130px;left:-46px;top:92px;background:#f08007;opacity:.45;animation-delay:-3s" />
       <div class="row">
+        <img class="lg" src="/icons/logo.png" alt="ORCA X" width="44" height="44" />
         <div class="who">
           <div class="hi">{{ sapaan() }},</div>
           <div class="nm">{{ auth.user?.fullname }}</div>
@@ -403,6 +404,7 @@ onBeforeUnmount(() => clearInterval(timer))
 .top { position: relative; overflow: hidden; padding: calc(var(--safe-top) + 16px) 16px 58px; border-radius: 0 0 26px 26px; }
 .row { position: relative; display: flex; align-items: center; gap: 8px; }
 .who { flex: 1; min-width: 0; }
+.lg { flex: none; width: 44px; height: 44px; border-radius: 13px; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3); }
 .hi { color: #cfe0ff; font-size: 13px; }
 .nm { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dt { color: #b3cbef; font-size: 12px; margin-top: 1px; }
