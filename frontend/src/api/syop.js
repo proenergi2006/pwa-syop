@@ -117,6 +117,11 @@ export const poUbahHargaForm = (id) => api.get(`/po-supplier/${id}/ubah-harga`).
 export const poSimpanHarga = (id, p) => api.put(`/po-supplier/${id}/ubah-harga`, p).then((r) => r.data)
 export const poCloseForm = (id) => api.get(`/po-supplier/${id}/close`).then((r) => r.data)
 export const poClose = (id, p) => api.post(`/po-supplier/${id}/close`, p).then((r) => r.data)
+export const shipPo = (id) => api.get(`/po-supplier/${id}/shipping`).then((r) => r.data)
+export const shipKapal = (transportir) => api.get('/po-supplier/kapal', { params: { transportir } }).then((r) => r.data)
+export const shipSimpan = (id, sr, p) => (sr ? api.put(`/po-supplier/${id}/shipping/${sr}`, p) : api.post(`/po-supplier/${id}/shipping`, p)).then((r) => r.data)
+export const shipCancel = (id, sr, ket) => api.post(`/po-supplier/${id}/shipping/${sr}/cancel`, { ket_cancel: ket }).then((r) => r.data)
+export const shipCetak = (id, sr) => api.get(`/po-supplier/${id}/shipping/${sr}/cetak`).then((r) => r.data)
 export const cetakPoSupplier = (id, mode) => api.get(`/po-supplier/${id}/cetak`, { params: { mode } }).then((r) => r.data)
 
 export const listTruckingDr = (params = {}) => api.get('/trucking-dr', { params }).then((r) => r.data)

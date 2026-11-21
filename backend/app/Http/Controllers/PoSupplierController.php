@@ -270,7 +270,7 @@ class PoSupplierController extends Controller
     }
 
     /** tgl_indo() web: "09 Juni 2026" (tanggal dua digit, bulan Indonesia panjang). */
-    private static function tglIndo(?string $t): string
+    public static function tglIndo(?string $t): string
     {
         if (! $t || str_starts_with($t, '0000-00-00')) {
             return '';

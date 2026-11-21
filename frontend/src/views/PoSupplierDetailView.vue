@@ -147,6 +147,11 @@ onMounted(load)
         <button class="btn btn-primary" @click="router.push({ name: 'po-supplier-terima', params: { id } })"><Icon name="truck" :size="18" /> {{ d.aksi.includes('terima') ? 'Terima barang' : 'Lihat RI' }}</button>
       </section>
 
+      <section v-if="d.aksi.includes('ship') && d.jenis_kirim === 2" class="card">
+        <h2 class="sec-t">Shipping request</h2>
+        <button class="btn btn-ghost" @click="router.push({ name: 'po-supplier-shipping', params: { id } })"><Icon name="ship" :size="18" /> Shipping request</button>
+      </section>
+
       <section v-if="d.aksi.includes('close')" class="card">
         <h2 class="sec-t">Close PO</h2>
         <button class="btn btn-ghost" @click="router.push({ name: 'po-supplier-close', params: { id } })"><Icon name="check" :size="18" /> Close PO</button>
@@ -159,7 +164,7 @@ onMounted(load)
           <button class="btn btn-ghost" @click="cetak('gainloss')"><Icon name="doc" :size="18" /> Dengan Gain &amp; Loss</button>
         </div>
       </section>
-      <p class="muted foot">Shipping request belum tersedia di PWA.</p>
+      <p class="muted foot">Cetakan Shipping Instruction belum tersedia di PWA.</p>
     </template>
   </div>
 </template>
