@@ -8,6 +8,8 @@ use App\Http\Controllers\HargaController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ShippingController;
 use App\Http\Controllers\TruckingController;
+use App\Http\Controllers\TruckingTiController;
+use App\Http\Controllers\TruckingTiTerimaController;
 use App\Http\Controllers\TruckingDrController;
 use App\Http\Middleware\ModuleAccess;
 use App\Http\Controllers\PenawaranController;
@@ -26,6 +28,7 @@ use App\Http\Controllers\ForecastBmController;
 use App\Http\Controllers\ForecastOmController;
 use App\Http\Controllers\RequestOaController;
 use App\Http\Controllers\ReportMarketingController;
+use App\Http\Controllers\ReportProcurementController;
 use App\Http\Controllers\ReportRsspController;
 use App\Http\Controllers\RsspInputController;
 use App\Http\Controllers\RefundPenerimaController;
@@ -138,6 +141,25 @@ Route::prefix('v1')->group(function () {
         Route::get('{id}/terima/{ri}/lampiran', [PoSupplierTerimaController::class, 'lampiran'])->whereNumber(['id', 'ri']);
     });
 
+    Route::middleware(['auth:sanctum', ModuleAccess::class.':trucking_ti'])->prefix('trucking-ti')->group(function () {
+        Route::get('opsi', [TruckingTiController::class, 'opsi']);
+        Route::get('transportir', [TruckingTiController::class, 'transportir']);
+        Route::get('ongkos', [TruckingTiController::class, 'ongkos']);
+        Route::get('baru', [TruckingTiController::class, 'baru']);
+        Route::get('/', [TruckingTiController::class, 'index']);
+        Route::post('/', [TruckingTiController::class, 'store'])->middleware('throttle:20,1');
+        Route::get('{id}', [TruckingTiController::class, 'show'])->whereNumber('id');
+        Route::put('{id}', [TruckingTiController::class, 'update'])->whereNumber('id')->middleware('throttle:20,1');
+        Route::post('{id}/cancel', [TruckingTiController::class, 'cancel'])->whereNumber('id')->middleware('throttle:20,1');
+        Route::get('{id}/cetak', [TruckingTiController::class, 'cetak'])->whereNumber('id');
+        Route::get('{id}/terima', [TruckingTiTerimaController::class, 'show'])->whereNumber('id');
+        Route::post('{id}/terima', [TruckingTiTerimaController::class, 'received'])->whereNumber('id')->middleware('throttle:20,1');
+        Route::post('{id}/ds/{dsd}/approve-cancel', [TruckingTiTerimaController::class, 'approveCancel'])->whereNumber(['id', 'dsd'])->middleware('throttle:20,1');
+        Route::get('{id}/prd/{prd}/sj', [TruckingTiTerimaController::class, 'lampiran'])->whereNumber(['id', 'prd']);
+        Route::get('{id}/cetak-received', [TruckingTiTerimaController::class, 'cetak'])->whereNumber('id');
+        Route::get('{id}/prd/{prd}/accurate', [TruckingTiTerimaController::class, 'detailAccurate'])->whereNumber(['id', 'prd']);
+    });
+
     Route::middleware(['auth:sanctum', ModuleAccess::class.':inventory'])->prefix('inventory')->group(function () {
         Route::get('/', [InventoryController::class, 'index']);
         Route::get('filter', [InventoryController::class, 'filters']);
@@ -235,6 +257,17 @@ Route::prefix('v1')->group(function () {
         Route::get('kegiatan/list', [ReportMarketingController::class, 'kegiatanList']);
         Route::get('kegiatan/{id}', [ReportMarketingController::class, 'kegiatanShow'])->whereNumber('id');
         Route::get('kegiatan/{id}/berkas/{fid}', [ReportMarketingController::class, 'kegiatanBerkas'])->whereNumber('id')->whereNumber('fid');
+    });
+
+    Route::middleware(['auth:sanctum', ModuleAccess::class.':report_procurement'])->prefix('report/procurement')->group(function () {
+        Route::get('opsi', [ReportProcurementController::class, 'opsi']);
+        Route::get('loaded-truck', [ReportProcurementController::class, 'loadedTruckList']);
+        Route::get('loaded-truck/export', [ReportProcurementController::class, 'loadedTruckExport'])->middleware('throttle:20,1');
+        Route::get('loaded-kapal', [ReportProcurementController::class, 'loadedKapalList']);
+        Route::get('loaded-kapal/export', [ReportProcurementController::class, 'loadedKapalExport'])->middleware('throttle:20,1');
+        Route::get('stok-truck', [ReportProcurementController::class, 'stokTruckList']);
+        Route::put('stok-truck/{id}', [ReportProcurementController::class, 'stokTruckUbahTanggal'])->whereNumber('id')->middleware('throttle:30,1');
+        Route::get('stok-operasional', [ReportProcurementController::class, 'stokOperasionalList']);
     });
 
     Route::middleware(['auth:sanctum', ModuleAccess::class.':rssp'])->prefix('report/rssp')->group(function () {

@@ -32,7 +32,8 @@ const router = createRouter({
     { path: '/produk/form', name: 'produk-form', component: () => import('../views/ProdukFormView.vue'), meta: { module: 'produk' } },
     { path: '/produk/:id(\\d+)', name: 'produk-detail', component: () => import('../views/ProdukDetailView.vue'), props: true, meta: { module: 'produk' } },
     { path: '/dr', name: 'dr', component: () => import('../views/DrView.vue'), meta: { nav: true, module: ['dr', 'dr_lihat'] } },
-    { path: '/report', name: 'report', component: () => import('../views/ReportView.vue'), meta: { nav: true, module: ['report', 'rssp'] } }, // Menu Report: Report Marketing (OM, BM, CEO) dan/atau Report RSSP (Purchasing, OM, CEO)
+    { path: '/report', name: 'report', component: () => import('../views/ReportView.vue'), meta: { nav: true, module: ['report', 'rssp', 'report_procurement'] } }, // Menu Report: Report Marketing (OM, BM, CEO) dan/atau Report RSSP (Purchasing, OM, CEO)
+    { path: '/report/procurement', name: 'report-procurement', component: () => import('../views/ReportProcurementView.vue'), meta: { module: 'report_procurement' } },
     { path: '/report/rssp', name: 'report-rssp', component: () => import('../views/ReportRsspView.vue'), meta: { module: 'rssp' } },
     { path: '/report/marketing', name: 'report-marketing', component: () => import('../views/ReportMarketingView.vue'), meta: { module: 'report' } },
     { path: '/sales-confirmation', name: 'sc', component: () => import('../views/SalesConfirmationView.vue'), meta: { nav: true, module: 'sc' } },
@@ -45,6 +46,12 @@ const router = createRouter({
     { path: '/refund-penerima/:id(\\d+)', name: 'refund-penerima-detail', component: () => import('../views/RefundDetailView.vue'), meta: { module: 'refund' } },
     { path: '/verifikasi-customer', name: 'verifikasi-customer', component: () => import('../views/VerifikasiCustomerView.vue'), meta: { nav: true, module: 'verifikasi_customer' } },
     { path: '/verifikasi-customer/:id(\\d+)', name: 'verifikasi-customer-detail', component: () => import('../views/VerifikasiCustomerDetailView.vue'), meta: { module: 'verifikasi_customer' } },
+    { path: '/trucking-ti', name: 'trucking-ti', component: () => import('../views/TruckingTiView.vue'), meta: { nav: true, module: 'trucking_ti' } },
+    { path: '/trucking-ti/baru', name: 'trucking-ti-baru', component: () => import('../views/TruckingTiFormView.vue'), meta: { module: 'trucking_ti' } },
+    { path: '/trucking-ti/:id(\\d+)', name: 'trucking-ti-form', component: () => import('../views/TruckingTiFormView.vue'), props: true, meta: { module: 'trucking_ti' } },
+    { path: '/trucking-ti/:id(\\d+)/terima', name: 'trucking-ti-terima', component: () => import('../views/TruckingTiTerimaView.vue'), props: true, meta: { module: 'trucking_ti' } },
+    { path: '/trucking-ti/:id(\\d+)/cetak-received', name: 'trucking-ti-cetak-received', component: () => import('../views/TruckingTiCetakReceivedView.vue'), props: true, meta: { module: 'trucking_ti' } },
+    { path: '/trucking-ti/:id(\\d+)/cetak', name: 'trucking-ti-cetak', component: () => import('../views/TruckingTiCetakView.vue'), props: true, meta: { module: 'trucking_ti' } },
     { path: '/trucking-dr', name: 'trucking-dr', component: () => import('../views/TruckingDrView.vue'), meta: { nav: true, module: 'trucking_dr' } },
     { path: '/trucking-dr/:id(\\d+)', name: 'trucking-dr-detail', component: () => import('../views/TruckingDrDetailView.vue'), props: true, meta: { module: 'trucking_dr' } },
     { path: '/po-supplier', name: 'po-supplier', component: () => import('../views/PoSupplierView.vue'), meta: { nav: true, module: 'po_supplier' } },
@@ -75,7 +82,7 @@ const router = createRouter({
 
 router.beforeEach((to, from) => {
   // Detail masuk dari kanan, kembali ke kiri; antar tab memudar naik.
-  navDir.value = ['approval-detail', 'shipping-detail', 'trucking-detail', 'oa-detail', 'forecast-cabang', 'dr-detail', 'trucking-dr-detail', 'po-detail', 'po-supplier-detail', 'po-supplier-cetak', 'po-supplier-baru', 'po-supplier-ubah', 'po-supplier-ubah-harga', 'po-supplier-close', 'po-supplier-shipping', 'po-supplier-shipping-cetak', 'po-supplier-terima', 'po-supplier-terima-form', 'po-supplier-loss-gain', 'harga-detail', 'harga-form', 'produk-detail', 'produk-form', 'master-terminal-form', 'master-vendor-form'].includes(to.name) ? 'slide-left' : ['approval-detail', 'shipping-detail', 'trucking-detail', 'oa-detail', 'forecast-cabang', 'dr-detail', 'trucking-dr-detail', 'po-detail', 'po-supplier-detail', 'po-supplier-cetak', 'po-supplier-baru', 'po-supplier-ubah', 'po-supplier-ubah-harga', 'po-supplier-close', 'po-supplier-terima', 'po-supplier-terima-form', 'po-supplier-loss-gain', 'harga-detail', 'harga-form', 'produk-detail', 'produk-form', 'master-terminal-form', 'master-vendor-form'].includes(from.name) ? 'slide-right' : 'fade-up'
+  navDir.value = ['approval-detail', 'shipping-detail', 'trucking-detail', 'oa-detail', 'forecast-cabang', 'dr-detail', 'trucking-dr-detail', 'po-detail', 'po-supplier-detail', 'po-supplier-cetak', 'trucking-ti-baru', 'trucking-ti-form', 'trucking-ti-cetak', 'trucking-ti-cetak-received', 'trucking-ti-terima', 'po-supplier-baru', 'po-supplier-ubah', 'po-supplier-ubah-harga', 'po-supplier-close', 'po-supplier-shipping', 'po-supplier-shipping-cetak', 'po-supplier-terima', 'po-supplier-terima-form', 'po-supplier-loss-gain', 'harga-detail', 'harga-form', 'produk-detail', 'produk-form', 'master-terminal-form', 'master-vendor-form'].includes(to.name) ? 'slide-left' : ['approval-detail', 'shipping-detail', 'trucking-detail', 'oa-detail', 'forecast-cabang', 'dr-detail', 'trucking-dr-detail', 'po-detail', 'po-supplier-detail', 'po-supplier-cetak', 'po-supplier-baru', 'po-supplier-ubah', 'po-supplier-ubah-harga', 'po-supplier-close', 'po-supplier-terima', 'po-supplier-terima-form', 'po-supplier-loss-gain', 'harga-detail', 'harga-form', 'produk-detail', 'produk-form', 'master-terminal-form', 'master-vendor-form'].includes(from.name) ? 'slide-right' : 'fade-up'
   if (!to.meta.public && !tokenStore.get()) return { name: 'login' }
   if (to.name === 'login' && tokenStore.get()) return { name: 'home' }
   // Modul yang tidak tersedia untuk peran ini kembali ke Beranda.

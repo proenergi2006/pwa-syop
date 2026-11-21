@@ -412,7 +412,12 @@ class TruckingDrController extends Controller
             DB::table('pro_pr_trucking_detail')->whereIn('id_prd_ti', $rows->pluck('id_prd_ti'))->delete();
             DB::table('pro_pr_trucking')->where('id_pr_ti', $id)->delete();
             DB::table('pro_trucking_instruction_req')->whereIn('id_master', $rows->pluck('id_trucking')->filter()->unique())->update(['status' => 1]);
-            DB::table('pro_trucking_plan')->whereIn('id_plan', $rows->pluck('id_plan')->unique())->delete();
+            // Baris rencana dilepas hanya bila tidak dipakai DR lain (kunci asing pro_pr_trucking_detail.id_plan di server).
+            foreach ($rows->pluck('id_plan')->unique() as $plan) {
+                if (! DB::table('pro_pr_trucking_detail')->where('id_plan', $plan)->exists()) {
+                    DB::table('pro_trucking_plan')->where('id_plan', $plan)->delete();
+                }
+            }
 
             ApprovalMail::toRoles([5], null, 'Revisi DR Trucking Instruction ke DP  [' . ApprovalMail::stamp() . ']',
                 e($request->user()->fullname) . ' kembalikan status Trucking DR ke Trucking Delivery Plan logistik');

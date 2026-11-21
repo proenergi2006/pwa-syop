@@ -28,12 +28,13 @@ const modules = [
   { key: 'master_terminal', label: 'home.m.terminal', icon: 'box', to: 'master-terminal', tone: 'teal', mod: 'master' },
   { key: 'master_vendor', label: 'home.m.vendor', icon: 'cart', to: 'master-vendor', tone: 'violet', mod: 'master' },
   { key: 'po_supplier', label: 'home.m.poSupplier', icon: 'cart', to: 'po-supplier', tone: 'violet', mod: 'po_supplier' },
+  { key: 'trucking_ti', label: 'home.m.trucking', icon: 'truck', to: 'trucking-ti', tone: 'orange', mod: 'trucking_ti' },
   { key: 'trucking_dr', label: 'home.m.truckingDr', icon: 'truck', to: 'trucking-dr', tone: 'orange', mod: 'trucking_dr' },
   { key: 'sc', label: 'sc.title', icon: 'invoice', to: 'sc', tone: 'teal', mod: 'sc' },
   { key: 'permohonan', label: 'pm.title', icon: 'doc', to: 'permohonan', tone: 'indigo', mod: 'permohonan' },
   { key: 'lcr', label: 'lcr.title', icon: 'box', to: 'lcr', tone: 'teal', mod: 'lcr' },
   { key: 'refund', label: 'home.m.refund', icon: 'refund', to: 'refund-penerima', tone: 'green', mod: 'refund' },
-  { key: 'report', label: 'report.title', icon: 'chart', to: 'report', tone: 'green', mod: ['report', 'rssp'] },
+  { key: 'report', label: 'report.title', icon: 'chart', to: 'report', tone: 'green', mod: ['report', 'rssp', 'report_procurement'] },
   { key: 'verifikasi_customer', label: 'vc.title', icon: 'doc', to: 'verifikasi-customer', tone: 'blue', mod: 'verifikasi_customer' },
   { key: 'fuel', label: 'mod.fuel', icon: 'drop', tone: 'teal' },
   { key: 'po', label: 'mod.po', icon: 'cart', to: 'po', tone: 'violet', mod: 'po' },
@@ -61,7 +62,7 @@ const has = (m) => !m || !Array.isArray(auth.user?.modules) || (Array.isArray(m)
 // OM/BM (hanya modul penawaran): menu lain, termasuk yang "segera hadir", disembunyikan.
 const limited = computed(() => {
   const mods = auth.user?.modules
-  return Array.isArray(mods) && mods.every((x) => ['penawaran', 'stok_terminal', 'reservasi', 'mobil', 'inventory', 'dr', 'po_supplier', 'trucking_dr', 'master', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'report', 'rssp', 'forecast_om', 'forecast_bm', 'rssp_input', 'pengumuman', 'pengumuman_admin', 'sistem'].includes(x))
+  return Array.isArray(mods) && mods.every((x) => ['penawaran', 'stok_terminal', 'reservasi', 'mobil', 'inventory', 'dr', 'po_supplier', 'trucking_ti', 'report_procurement', 'trucking_dr', 'master', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'report', 'rssp', 'forecast_om', 'forecast_bm', 'rssp_input', 'pengumuman', 'pengumuman_admin', 'sistem'].includes(x))
 })
 const all = computed(() => [...modules, ...tools].filter((m) => (m.mod ? has(m.mod) : m.key === 'riwayat' ? has('penawaran') : !limited.value)))
 // Hanya yang sudah bisa dipakai tampil sebagai kartu; sisanya diringkas sebagai daftar "Segera hadir".

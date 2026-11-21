@@ -14,6 +14,7 @@ const auth = useAuth()
 const all = [
   { key: 'marketing', to: 'report-marketing', icon: 'chart', title: 'report.marketing', sub: 'report.marketingSub', tags: ['rm.tab.vol', 'rm.tab.act', 'rm.tab.new', 'rm.tab.keg'], c: '#0a66e8', mod: 'report', art: 'bars' },
   { key: 'rssp', to: 'report-rssp', icon: 'drop', title: 'report.rssp', sub: 'report.rsspSub', tags: ['rs.tag.stock', 'rs.tag.supply', 'rs.tag.sales', 'rs.tag.forecast'], c: '#0f8b8d', mod: 'rssp', art: 'tank' },
+  { key: 'procurement', to: 'report-procurement', icon: 'truck', title: 'report.procurement', sub: 'report.procurementSub', tags: ['rp.tag.truck', 'rp.tag.kapal', 'rp.tag.stok', 'rp.tag.opr'], c: '#e07400', mod: 'report_procurement', art: 'bars' },
 ]
 // Hanya report yang boleh dibuka peran ini (OM: Marketing; CEO: Marketing dan RSSP).
 const reports = computed(() => all.filter((r) => !Array.isArray(auth.user?.modules) || auth.user.modules.includes(r.mod)))

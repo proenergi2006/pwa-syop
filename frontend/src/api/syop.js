@@ -124,6 +124,27 @@ export const shipCancel = (id, sr, ket) => api.post(`/po-supplier/${id}/shipping
 export const shipCetak = (id, sr) => api.get(`/po-supplier/${id}/shipping/${sr}/cetak`).then((r) => r.data)
 export const cetakPoSupplier = (id, mode) => api.get(`/po-supplier/${id}/cetak`, { params: { mode } }).then((r) => r.data)
 
+export const tiList = (params = {}) => api.get('/trucking-ti', { params }).then((r) => r.data)
+export const tiOpsi = () => api.get('/trucking-ti/opsi').then((r) => r.data)
+export const tiBaru = () => api.get('/trucking-ti/baru').then((r) => r.data)
+export const tiShow = (id) => api.get(`/trucking-ti/${id}`).then((r) => r.data)
+export const tiTransportir = (id_wilayah) => api.get('/trucking-ti/transportir', { params: { id_wilayah } }).then((r) => r.data)
+export const tiOngkos = (transportir, volume) => api.get('/trucking-ti/ongkos', { params: { transportir, volume } }).then((r) => r.data)
+export const tiSimpan = (id, p) => (id ? api.put(`/trucking-ti/${id}`, p) : api.post('/trucking-ti', p)).then((r) => r.data)
+export const tiCancel = (id, ket) => api.post(`/trucking-ti/${id}/cancel`, { ket_cancel: ket }).then((r) => r.data)
+export const tiCetak = (id) => api.get(`/trucking-ti/${id}/cetak`).then((r) => r.data)
+
+export const rpOpsi = () => api.get('/report/procurement/opsi').then((r) => r.data)
+export const rpList = (jenis, params = {}) => api.get(`/report/procurement/${jenis}`, { params }).then((r) => r.data)
+export const rpUbahTanggal = (id, tanggal) => api.put(`/report/procurement/stok-truck/${id}`, { tanggal }).then((r) => r.data)
+
+export const tiTerima = (id) => api.get(`/trucking-ti/${id}/terima`).then((r) => r.data)
+export const tiReceived = (id, p) => api.post(`/trucking-ti/${id}/terima`, p).then((r) => r.data)
+export const tiApproveCancel = (id, dsd) => api.post(`/trucking-ti/${id}/ds/${dsd}/approve-cancel`).then((r) => r.data)
+export const tiDetailAccurate = (id, prd) => api.get(`/trucking-ti/${id}/prd/${prd}/accurate`).then((r) => r.data)
+export const tiCetakReceived = (id) => api.get(`/trucking-ti/${id}/cetak-received`).then((r) => r.data)
+export const tiSj = (id, prd) => api.get(`/trucking-ti/${id}/prd/${prd}/sj`, { responseType: 'blob' }).then((r) => r.data)
+
 export const listTruckingDr = (params = {}) => api.get('/trucking-dr', { params }).then((r) => r.data)
 export const getTruckingDr = (id) => api.get(`/trucking-dr/${id}`).then((r) => r.data)
 export const truckingDrPoSupplier = (id, q) => api.get(`/trucking-dr/${id}/po-supplier`, { params: { q: q || undefined } }).then((r) => r.data)

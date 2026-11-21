@@ -154,7 +154,8 @@ class TruckingDrTest extends TestCase
         $this->postJson("/api/v1/trucking-dr/$id/kembali-dp")->assertOk();
         $this->assertSame(0, DB::table('pro_pr_trucking')->where('id_pr_ti', $id)->count());
         $this->assertSame(0, DB::table('pro_pr_trucking_detail')->where('id_pr_ti', $id)->count());
-        $this->assertSame(0, DB::table('pro_trucking_plan')->where('id_plan', $plan)->count());
+        // rencana dilepas bila tidak dipakai DR lain (data asli: satu rencana bisa dipakai beberapa DR, ada kunci asing)
+        $this->assertSame(DB::table('pro_pr_trucking_detail')->where('id_plan', $plan)->exists() ? 1 : 0, DB::table('pro_trucking_plan')->where('id_plan', $plan)->count());
         $this->assertSame(1, (int) DB::table('pro_trucking_instruction_req')->where('id_master', $ti)->value('status'));
         $this->getJson("/api/v1/trucking-dr/$id")->assertNotFound();
     }
