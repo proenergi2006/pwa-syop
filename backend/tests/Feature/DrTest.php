@@ -189,6 +189,11 @@ class DrTest extends TestCase
         $this->assertSame(1, (int) DB::table('pro_pr_detail')->where('id_prd', $l['id_prd'])->value('is_split'));
         $det = $this->getJson("/api/v1/dr/$id")->assertOk();
         $this->assertSame($half, $det->json('lines.0.volume_potong'));
+        // volume pengiriman tetap utuh; hanya potongan yang terbagi (porsi 1 di vol_potongan, porsi 2 di tabel potongan)
+        $this->assertSame($l['volume'], (int) DB::table('pro_pr_detail')->where('id_prd', $l['id_prd'])->value('volume'));
+        $this->assertSame($l['volume'] - $half, (int) DB::table('pro_pr_detail')->where('id_prd', $l['id_prd'])->value('vol_potongan'));
+        $this->assertSame($l['volume'], $det->json('lines.0.volume'));
+        $this->assertSame($l['volume'] - $half, $det->json('lines.0.vol_potongan'));
 
         $this->postJson("/api/v1/dr/$id/revisi")->assertStatus(409); // DR lama (Closed) tidak bisa direvisi
         DB::table('pro_pr')->where('id_pr', $id)->update(['tanggal_pr' => now()->toDateString()]);

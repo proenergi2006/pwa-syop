@@ -447,14 +447,14 @@ class DrController extends Controller
                 $x = $c['x'];
                 $p = $c['p'];
                 $upd = [
-                    'vol_ori' => $c['volori'], 'vol_ori_pr' => $c['volori'], 'volume' => $c['vol'],
+                    'vol_ori' => $c['volori'], 'vol_ori_pr' => $c['volori'], 'volume' => $c['volori'], // volume pengiriman tetap utuh; porsi PO pertama ada di vol_potongan, porsi kedua di new_pro_inventory_potongan_stock
+                    'vol_potongan' => $c['vol'],
                     'pr_top' => $x->top_plan ?: ['CREDIT' => 'NET '.$x->top_payment, 'COD' => 'COD', 'CDB' => 'CBD'][$x->jenis_payment] ?? null,
                     'pr_kredit_limit' => $x->credit_limit, 'pr_vendor' => $p->id_vendor, 'pr_harga_beli' => (int) round((float) $p->harga_tebus),
                     'pr_price_list' => (int) ($x->harga_normal ?: $x->harga_normal_new), 'pr_po' => null, 'pr_terminal' => $p->id_terminal, 'cabang' => $inisial,
                     'nomor_po_supplier' => $p->nomor_po_supplier, 'id_po_supplier' => $p->id_po_supplier, 'id_po_receive' => $p->id_po_receive,
                 ];
                 if (! $disLo) {
-                    $upd['vol_potongan'] = $c['vol'];
                     $upd['nomor_lo_pr'] = 'LO/'.$inisial.'/'.str_pad((string) mt_rand(1, 99999999), 6, '0', STR_PAD_LEFT);
                     $urut++;
                     if (! $x->no_do_syop) {
