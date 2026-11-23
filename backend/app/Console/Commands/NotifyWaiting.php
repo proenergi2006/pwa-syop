@@ -61,6 +61,7 @@ class NotifyWaiting extends Command
                 }
             }
 
+            $unread = \App\Http\Controllers\PengumumanController::belumDibaca($user); // ikut di angka ikon
             $sentNow = false;
             if ($new) {
                 $bodyId = $this->body($new, $total, 'id');
@@ -74,8 +75,8 @@ class NotifyWaiting extends Command
                         'body'  => $bodyId,
                         'url'   => $url,
                         'tag'   => 'waiting',
-                        'badge' => $total,
-                        'en'    => ['title' => 'Awaiting your decision', 'body' => $bodyEn, 'badge' => $total],
+                        'badge' => $total + $unread,
+                        'en'    => ['title' => 'Awaiting your decision', 'body' => $bodyEn, 'badge' => $total + $unread],
                     ]);
                     $sentNow = true;
                 }

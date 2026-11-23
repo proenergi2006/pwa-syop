@@ -33,8 +33,8 @@ onMounted(() => {
 // Segarkan lencana setiap kali pindah halaman utama (data bisa berubah dari web).
 watch(() => route.fullPath, () => { if (tokenStore.get() && route.meta.nav) inbox.refresh() })
 // Pemuatan pertama (rute belum terbaca saat pengamat jalan) dan penyegaran berkala selama aplikasi terbuka.
-// Angka di ikon aplikasi terpasang (Badging API): total yang menunggu keputusan; hilang saat 0 atau logout.
-watch(() => inbox.all, (n) => {
+// Angka di ikon aplikasi terpasang (Badging API): menunggu keputusan + pengumuman belum dibaca; hilang saat 0 atau logout.
+watch(() => inbox.icon, (n) => {
   try {
     if (!('setAppBadge' in navigator)) return
     if (n > 0) navigator.setAppBadge(n).catch(() => {})

@@ -20,7 +20,7 @@ class PushService
 
     /**
      * @param  int[]  $userIds
-     * @param  array{title:string, body:string, url?:string, tag?:string, badge?:int, en?:array{title:string, body:string}}  $payload
+     * @param  array{title:string, body:string, url?:string, tag?:string, badge?:int|callable, en?:array{title:string, body:string}}  $payload
      *         Kunci 'en' (opsional) = isi untuk perangkat berbahasa Inggris.
      * @return int jumlah push yang berhasil diantar ke layanan push
      */
@@ -47,14 +47,21 @@ class PushService
                 ['title' => $p['title'], 'body' => $p['body'], 'url' => $p['url'] ?? '/', 'tag' => $p['tag'] ?? null, 'badge' => $p['badge'] ?? null],
                 JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
             );
-            $jsonId = $enc($payload);
-            $jsonEn = isset($payload['en']) ? $enc($payload['en'] + $payload) : $jsonId;
+            // 'badge' boleh berupa callable(int $idUser): ?int bila angkanya berbeda tiap penerima.
+            $perUser = is_callable($payload['badge'] ?? null);
+            $jsonId = $perUser ? null : $enc($payload);
+            $jsonEn = $perUser ? null : (isset($payload['en']) ? $enc($payload['en'] + $payload) : $jsonId);
             $byEndpoint = [];
             foreach ($subs as $s) {
                 $byEndpoint[$s->endpoint] = $s;
+                $pl = $payload;
+                if ($perUser) {
+                    $pl['badge'] = ($payload['badge'])((int) $s->id_user);
+                }
+                $msg = $s->lang === 'en' && isset($pl['en']) ? $enc($pl['en'] + $pl) : $enc($pl);
                 $webPush->queueNotification(
                     Subscription::create(['endpoint' => $s->endpoint, 'publicKey' => $s->p256dh, 'authToken' => $s->auth]),
-                    $s->lang === 'en' ? $jsonEn : $jsonId,
+                    $msg,
                 );
             }
 

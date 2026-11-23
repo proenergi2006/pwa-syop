@@ -6,6 +6,7 @@ export const useInbox = defineStore('inbox', {
   state: () => ({ total: 0, po: 0, shipping: 0, trucking: 0, dr: 0, trucking_dr: 0, verifikasi_customer: 0, refund: 0, permohonan: 0, lcr: 0, sc: 0, oa: 0, forecast: 0, forecast_request: 0, forecast_om: 0, forecast_revisi: 0, forecast_bm: 0, pengumuman: 0, loaded: false }), // pengumuman = belum dibaca (bukan "menunggu keputusan", tidak ikut `all`) // total = penawaran
   getters: {
     all: (s) => s.total + s.po + s.shipping + s.trucking + s.dr + s.trucking_dr + s.verifikasi_customer + s.refund + s.permohonan + s.lcr + s.sc + s.oa + s.forecast + s.forecast_request + s.forecast_om + s.forecast_revisi + s.forecast_bm, // semua yang menunggu, dari semua menu
+    icon: (s) => s.all + s.pengumuman, // angka di ikon aplikasi: yang menunggu keputusan + pengumuman belum dibaca
     count: (s) => (key) => (key === 'penawaran' ? s.total : key === 'forecast' ? s.forecast + s.forecast_request : key === 'forecast_om' ? s.forecast_om + s.forecast_revisi : s[key] || 0), // 'forecast' = periode + request qty (CEO); 'forecast_om' = request BM + periode ditolak (OM)
   },
   actions: {

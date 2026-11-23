@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AclUser;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -49,10 +50,23 @@ class AnnouncementService
         $isi = Str::limit(trim(preg_replace('/\s+/', ' ', (string) $a->isi)), 140);
         $push = app(PushService::class)->send($a->ids, [
             'title' => $a->judul, 'body' => $isi, 'url' => '/pengumuman?buka='.$id, 'tag' => 'pengumuman-'.$id,
+            'badge' => self::angkaIkon(...), // angka ikon beda tiap user: dihitung per penerima saat dikirim
             'en' => ['title' => $a->judul, 'body' => $isi],
         ]);
         DB::table('mobile_announcements')->where('id', $id)->update(['push_ke' => $push]);
 
         return ['dikirim_ke' => count($a->ids), 'push_ke' => $push];
+    }
+
+    /** Angka di ikon aplikasi satu user: approval yang menunggu + pengumuman belum dibaca (sama dengan hitungan aplikasi). */
+    public static function angkaIkon(int $idUser): ?int
+    {
+        try {
+            $u = AclUser::find($idUser);
+
+            return $u ? array_sum(WaitingCounts::for($u)) + \App\Http\Controllers\PengumumanController::belumDibaca($u) : null;
+        } catch (\Throwable) {
+            return null; // tanpa angka: ikon tidak diubah
+        }
     }
 }
