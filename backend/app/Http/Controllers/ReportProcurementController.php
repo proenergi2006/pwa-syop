@@ -9,7 +9,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Report Procurement (peran 5): Rekap Loaded Truck, Rekap Loaded Kapal, History Pemotongan Stock Truck, History Pemotongan Stock Operasional (BPUJ).
+ * Report Procurement (peran 5): Rekap Loaded Truck, Rekap Loaded Kapal, Cancel Trip, History Pemotongan Stock Truck, History Pemotongan Stock Operasional (BPUJ).
  * Sumber: c-rekap-loaded*.php, c-rekap-loaded-kapal*.php, e-rekap-loaded*-xls.php, c-history-stock*.php, c-history-stock-action.php,
  * c-history-stock-operational.php, c-history-stock-data-operational.php.
  */
@@ -197,6 +197,89 @@ class ReportProcurementController extends Controller
         }
 
         return $this->unduh($x, 'Rekap-Loaded-Kapal-'.date('dmYHis').'.xlsx');
+    }
+
+    // ------------------------------------------------------------------ Cancel Trip (pengiriman yang dibatalkan; verifikasi-request-pr.php, is_request = 3)
+
+    private function cancelTrip(Request $r)
+    {
+        $q = DB::table('pro_po_ds_detail as a')
+            ->join('pro_po_ds as b', 'a.id_ds', '=', 'b.id_ds')->join('pro_po_detail as c', 'a.id_pod', '=', 'c.id_pod')->join('pro_po as d', 'a.id_po', '=', 'd.id_po')
+            ->join('pro_pr_detail as e', 'a.id_prd', '=', 'e.id_prd')->join('pro_pr as f', 'a.id_pr', '=', 'f.id_pr')
+            ->join('pro_po_customer_plan as g', 'a.id_plan', '=', 'g.id_plan')->join('pro_po_customer as h', 'g.id_poc', '=', 'h.id_poc')
+            ->join('pro_customer as i', 'h.id_customer', '=', 'i.id_customer')->join('pro_master_cabang as j', 'b.id_wilayah', '=', 'j.id_master')
+            ->where('a.is_request', 3);
+        if (($t = trim((string) $r->query('q', ''))) !== '') {
+            $u = strtoupper($t).'%';
+            $q->where(fn ($w) => $w->whereRaw('UPPER(i.nama_customer) LIKE ?', [$u])->orWhereRaw('UPPER(f.nomor_pr) LIKE ?', [$u])->orWhereRaw('UPPER(j.nama_cabang) LIKE ?', [$u]));
+        }
+        if ($r->filled('cabang')) {
+            $q->where('b.id_wilayah', (int) $r->query('cabang'));
+        }
+        if ($r->filled('dari') && $r->filled('sampai')) {
+            $q->whereBetween('f.tanggal_pr', [$r->query('dari'), $r->query('sampai')]);
+        }
+
+        return $q->orderByDesc('a.tanggal_request')->orderByDesc('a.id_dsd');
+    }
+
+    private const CANCEL_SELECT = ['a.id_dsd', 'a.nomor_do', 'a.request', 'a.tanggal_request', 'a.disposisi_request', 'a.is_revert', 'a.tanggal_approved', 'a.tanggal_revert',
+        'f.nomor_pr', 'f.tanggal_pr', 'i.nama_customer', 'h.nomor_poc', 'e.volume', 'd.nomor_po', 'j.nama_cabang'];
+
+    private function barisCancel(object $a): array
+    {
+        $dt = fn ($t) => $t ? date('d/m/Y H:i:s', strtotime($t)).' WIB' : null;
+        if ((int) $a->disposisi_request === 1) {
+            $status = 'Menunggu Verifikasi';
+            $tglStatus = null;
+        } elseif ((int) $a->disposisi_request === 2 && (int) $a->is_revert === 1) {
+            $status = 'Terverifikasi';
+            $tglStatus = $dt($a->tanggal_approved);
+        } elseif ((int) $a->disposisi_request === 2 && (int) $a->is_revert === 2) {
+            $status = 'Ditolak';
+            $tglStatus = $dt($a->tanggal_revert);
+        } else {
+            $status = '';
+            $tglStatus = null;
+        }
+
+        return [
+            'id' => (int) $a->id_dsd, 'nomor_dr' => $a->nomor_pr, 'tgl_dr' => $a->tanggal_pr, 'customer' => $a->nama_customer, 'nomor_po' => $a->nomor_poc,
+            'qty' => (float) $a->volume, 'nomor_dn' => $a->nomor_do, 'cabang' => $a->nama_cabang, 'alasan' => $a->request, 'tgl_request' => $a->tanggal_request,
+            'status' => $status, 'tgl_status' => $tglStatus,
+        ];
+    }
+
+    public function cancelTripList(Request $r): JsonResponse
+    {
+        $page = $this->cancelTrip($r)->select(self::CANCEL_SELECT)->paginate($this->perPage($r));
+        $data = collect($page->items())->map(fn ($a) => $this->barisCancel($a))->values();
+
+        return response()->json([
+            'data' => $data, 'total_halaman' => (float) $data->sum('qty'),
+            'meta' => ['page' => $page->currentPage(), 'per_page' => $page->perPage(), 'total' => $page->total(), 'last' => $page->lastPage()],
+        ]);
+    }
+
+    public function cancelTripExport(Request $r): Response
+    {
+        @set_time_limit(120);
+        $rows = $this->cancelTrip($r)->limit(50000)->get(self::CANCEL_SELECT);
+        $x = new Xlsx('Cancel Trip');
+        $x->row([['Report Cancel Trip', Xlsx::S_TITLE]]);
+        $x->merge('A1:K1');
+        $x->row([]);
+        $x->row(array_map(fn ($h) => [$h, Xlsx::S_HEAD], ['No', 'Kode DR', 'Tanggal DR', 'Customer', 'Nomor PO', 'Volume', 'Nomor DN', 'Cabang', 'Tanggal Request', 'Alasan', 'Status']));
+        if ($rows->isEmpty()) {
+            $x->row(['Data tidak ada']);
+        }
+        foreach ($rows as $i => $a) {
+            $b = $this->barisCancel($a);
+            $x->row([$i + 1, $b['nomor_dr'], $a->tanggal_pr ? date('d-m-Y', strtotime($a->tanggal_pr)) : '', $b['customer'], $b['nomor_po'], number_format($b['qty']), $b['nomor_dn'], $b['cabang'],
+                $a->tanggal_request ? date('d-m-Y H:i', strtotime($a->tanggal_request)) : '', $b['alasan'], trim($b['status'].' '.$b['tgl_status'])]);
+        }
+
+        return $this->unduh($x, 'Cancel-Trip-'.date('dmYHis').'.xlsx');
     }
 
     // ------------------------------------------------------------------ History Pemotongan Stock Truck (depot jenis 6 dan 7)

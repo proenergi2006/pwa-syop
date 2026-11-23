@@ -21,13 +21,37 @@ class ReportProcurementTest extends TestCase
     {
         foreach ([21, 7, 6] as $role) {
             Sanctum::actingAs(AclUser::where('id_role', $role)->where('is_active', 1)->firstOrFail(), ['*']);
-            foreach (['opsi', 'loaded-truck', 'loaded-kapal', 'stok-truck', 'stok-operasional'] as $u) {
+            foreach (['opsi', 'loaded-truck', 'loaded-kapal', 'cancel-trip', 'stok-truck', 'stok-operasional'] as $u) {
                 $this->getJson("/api/v1/report/procurement/$u")->assertForbidden();
             }
         }
         $this->purch();
         $m = $this->getJson('/api/v1/me')->status();
         $this->assertContains('report_procurement', $this->getJson('/api/v1/auth/me')->json('user.modules') ?? []);
+    }
+
+    public function test_cancel_trip(): void
+    {
+        $this->purch();
+        $r = $this->getJson('/api/v1/report/procurement/cancel-trip?per_page=5')->assertOk()->json();
+        $this->assertNotEmpty($r['data']);
+        $this->assertLessThanOrEqual(5, count($r['data']));
+        $this->assertEqualsWithDelta(array_sum(array_column($r['data'], 'qty')), $r['total_halaman'], 0.001);
+        $x = $r['data'][0];
+        $this->assertContains($x['status'], ['Menunggu Verifikasi', 'Terverifikasi', 'Ditolak', '']);
+        // hanya yang is_request = 3
+        $semua = (int) $r['meta']['total'];
+        $this->assertSame($semua, DB::table('pro_po_ds_detail')->where('is_request', 3)->count());
+        // kata kunci pada kode DR
+        $c = $this->getJson('/api/v1/report/procurement/cancel-trip?q='.urlencode($x['nomor_dr']))->assertOk()->json('data');
+        $this->assertContains($x['nomor_dr'], array_column($c, 'nomor_dr'));
+        // rentang tanggal DR
+        $t = $this->getJson("/api/v1/report/procurement/cancel-trip?dari={$x['tgl_dr']}&sampai={$x['tgl_dr']}")->assertOk()->json('data');
+        foreach ($t as $b) {
+            $this->assertSame($x['tgl_dr'], $b['tgl_dr']);
+        }
+        $e = $this->get('/api/v1/report/procurement/cancel-trip/export')->assertOk();
+        $this->assertStringContainsString('spreadsheetml', $e->headers->get('Content-Type'));
     }
 
     public function test_rekap_loaded_truck_dan_kapal(): void

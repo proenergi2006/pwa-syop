@@ -13,6 +13,7 @@ const router = useRouter()
 const TABS = [
   { k: 'loaded-truck', t: 'Rekap Loaded Truck', excel: true, tgl: 'Tanggal Loaded' },
   { k: 'loaded-kapal', t: 'Rekap Loaded Kapal', excel: true, tgl: 'Tanggal Loaded' },
+  { k: 'cancel-trip', t: 'Cancel Trip', excel: true, tgl: 'Tanggal DR' },
   { k: 'stok-truck', t: 'History Stock Truck', terminal: true, tgl: 'Tanggal Potong' },
   { k: 'stok-operasional', t: 'History Stock Operasional (BPUJ)', terminal: true, tgl: 'Tanggal Potong' },
 ]
@@ -59,7 +60,7 @@ watch(tab, () => { items.value = []; load(1) })
 async function exportXls() {
   xls.value = true
   const p = new URLSearchParams(Object.entries(params(1)).filter(([k, v]) => v !== undefined && !['page', 'per_page'].includes(k)))
-  try { await openFile(`/report/procurement/${tab.value}/export?${p}`, tab.value === 'loaded-truck' ? 'Rekap-Loaded.xlsx' : 'Rekap-Loaded-Kapal.xlsx') } catch (e) { showToast(errorMessage(e), 'error') } finally { xls.value = false }
+  try { await openFile(`/report/procurement/${tab.value}/export?${p}`, ({ 'loaded-truck': 'Rekap-Loaded.xlsx', 'loaded-kapal': 'Rekap-Loaded-Kapal.xlsx', 'cancel-trip': 'Cancel-Trip.xlsx' })[tab.value]) } catch (e) { showToast(errorMessage(e), 'error') } finally { xls.value = false }
 }
 async function simpanTanggal() {
   if (!tglBaru.value) return
@@ -101,6 +102,16 @@ onMounted(() => { load(1); syop.rpOpsi().then((o) => { opsi.value = o }).catch((
             <div class="vols"><span>Qty <b>{{ angka(x.qty) }}</b> L</span><span>DR {{ tanggal(x.tgl_dr) }}</span><span>Loaded {{ tanggal(x.tgl_loaded) }}</span></div>
             <small v-if="x.tgl_loading" class="item-meta">Tgl Loading {{ x.tgl_loading }}<template v-if="x.jam_loading"> · Jam {{ x.jam_loading }}</template></small>
             <small v-if="x.tgl_cancel" class="item-meta">Tgl Cancel {{ x.tgl_cancel }}</small>
+          </div>
+        </template>
+        <template v-else-if="tab === 'cancel-trip'">
+          <div v-for="x in items" :key="x.id" class="item">
+            <div class="item-top"><div class="item-who"><span>{{ x.nomor_dr }}</span></div><span class="pill" :class="x.status === 'Terverifikasi' ? 'pill-ok' : x.status === 'Ditolak' ? 'pill-no' : 'pill-wait'">{{ x.status || '-' }}</span></div>
+            <div class="item-title">{{ x.customer }}</div>
+            <div class="item-meta">{{ x.cabang }} · PO {{ x.nomor_po }}<template v-if="x.nomor_dn"> · DN {{ x.nomor_dn }}</template></div>
+            <div class="vols"><span>Volume <b>{{ angka(x.qty) }}</b> L</span><span>DR {{ tanggal(x.tgl_dr) }}</span><span v-if="x.tgl_request">Request {{ tanggal(x.tgl_request) }}</span></div>
+            <div v-if="x.alasan" class="item-meta">Alasan: {{ x.alasan }}</div>
+            <div v-if="x.tgl_status" class="item-meta">{{ x.status }} {{ x.tgl_status }}</div>
           </div>
         </template>
         <template v-else-if="tab === 'stok-truck'">

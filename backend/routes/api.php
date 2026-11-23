@@ -277,6 +277,8 @@ Route::prefix('v1')->group(function () {
         Route::get('loaded-truck/export', [ReportProcurementController::class, 'loadedTruckExport'])->middleware('throttle:20,1');
         Route::get('loaded-kapal', [ReportProcurementController::class, 'loadedKapalList']);
         Route::get('loaded-kapal/export', [ReportProcurementController::class, 'loadedKapalExport'])->middleware('throttle:20,1');
+        Route::get('cancel-trip', [ReportProcurementController::class, 'cancelTripList']);
+        Route::get('cancel-trip/export', [ReportProcurementController::class, 'cancelTripExport'])->middleware('throttle:20,1');
         Route::get('stok-truck', [ReportProcurementController::class, 'stokTruckList']);
         Route::put('stok-truck/{id}', [ReportProcurementController::class, 'stokTruckUbahTanggal'])->whereNumber('id')->middleware('throttle:30,1');
         Route::get('stok-operasional', [ReportProcurementController::class, 'stokOperasionalList']);
