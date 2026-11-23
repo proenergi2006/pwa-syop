@@ -86,6 +86,16 @@ async function testPush() {
   } catch (e) { showToast(errorMessage(e), 'err') }
 }
 
+// Uji lencana ikon: pasang angka 5 lalu laporkan hasilnya (menolak = izin/OS/launcher perangkat), supaya penyebab terlihat di perangkat.
+async function testBadge() {
+  const id = lang.value === 'id'
+  if (!('setAppBadge' in navigator)) { showToast(id ? 'Perangkat/peramban ini tidak mendukung lencana ikon' : 'This device/browser does not support icon badges', 'err'); return }
+  try {
+    await navigator.setAppBadge(5)
+    showToast(id ? 'Angka 5 dipasang di ikon. Tutup aplikasi lalu lihat ikonnya.' : 'Badge 5 set. Close the app and check the icon.', 'ok')
+  } catch (e) { showToast((id ? 'Ditolak: ' : 'Rejected: ') + (e.name || '') + ' ' + (e.message || ''), 'err') }
+}
+
 // --- Face Recognition ---
 const enrolledAt = ref(null)
 const sheet = ref(null)      // 'enroll' | 'remove' | null
@@ -214,6 +224,7 @@ async function logout() {
         <div v-if="['on', 'off'].includes(push.state.value)" class="face-act">
           <button class="btn btn-ghost" :disabled="push.busy.value" @click="togglePush">{{ push.state.value === 'on' ? t('prof.turnOff') : t('prof.turnOn') }}</button>
           <button v-if="push.state.value === 'on'" class="btn btn-ghost" @click="testPush">{{ t('prof.sendTest') }}</button>
+          <button class="btn btn-ghost" @click="testBadge">{{ lang === 'id' ? 'Uji lencana' : 'Test badge' }}</button>
         </div>
       </section>
 
