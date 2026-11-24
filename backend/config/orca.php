@@ -36,6 +36,8 @@ return [
         'produk' => [21], // Master produk (daftar, detail, tambah, ubah)
         'harga' => [21], // Master harga jual (daftar, tambah, ubah, hapus)
         'po' => [21], // Verifikasi PO Supplier: tahap CEO (CFO menyusul)
+        'po_supplier_batu' => [5], // PO Supplier Crushed Stone (Procurement): daftar, detail, tambah, ubah, ajukan persetujuan, cetak; terima, cancel, close menyusul
+        'po_batu' => [21], // Verifikasi PO Supplier Crushed Stone (PO Batu): tahap CEO
         'dr' => [5], // Delivery Request: verifikasi Purchasing
         'dr_lihat' => [21], // Delivery Request (Procurement) hanya lihat: CEO. Tanpa verifikasi, simpan, revisi, atau kembalikan
         'report_procurement' => [5], // Report Procurement: Rekap Loaded Truck/Kapal, History Pemotongan Stock Truck dan Operasional (BPUJ)

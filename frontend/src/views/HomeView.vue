@@ -49,18 +49,20 @@ const logoutOpen = ref(false)
 const limitedMods = computed(() => Array.isArray(auth.user?.modules) && auth.user.modules.every((x) => ['penawaran', 'stok_terminal', 'reservasi', 'mobil', 'inventory', 'dr', 'trucking_dr', 'master', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'report', 'rssp', 'forecast_om', 'forecast_bm', 'rssp_input', 'pengumuman', 'pengumuman_admin', 'sistem'].includes(x)))
 const has = (m) => !m || !Array.isArray(auth.user?.modules) || (Array.isArray(m) ? m.some((x) => auth.user.modules.includes(x)) : auth.user.modules.includes(m))
 const canPenawaran = computed(() => has('penawaran'))
-const canApprove = computed(() => ['penawaran', 'po', 'shipping', 'trucking', 'dr', 'trucking_dr', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'oa', 'forecast', 'forecast_om', 'forecast_bm'].some((m) => has(m)))
-const breakdown = computed(() => [['penawaran', 'home.m.penawaran'], ['po', 'home.m.po'], ['shipping', 'SI'], ['trucking', 'TI'], ['dr', 'DR'], ['trucking_dr', 'Trucking DR'], ['verifikasi_customer', 'Verifikasi Customer'], ['refund', 'Refund'], ['permohonan', 'Permohonan'], ['lcr', 'LCR'], ['sc', 'SC'], ['oa', 'Verifikasi OA'], ['forecast', 'Forecast'], ['forecast_om', 'Forecast'], ['forecast_bm', 'Forecast']].filter(([k]) => has(k) && inbox.count(k) > 0).map(([k, l]) => `${inbox.count(k)} ${l.startsWith('home.') ? t(l) : l}`).join(' · '))
+const canApprove = computed(() => ['penawaran', 'po', 'po_batu', 'shipping', 'trucking', 'dr', 'trucking_dr', 'verifikasi_customer', 'refund', 'permohonan', 'lcr', 'sc', 'oa', 'forecast', 'forecast_om', 'forecast_bm'].some((m) => has(m)))
+const breakdown = computed(() => [['penawaran', 'home.m.penawaran'], ['po', 'home.m.po'], ['po_batu', 'home.m.poBatu'], ['shipping', 'SI'], ['trucking', 'TI'], ['dr', 'DR'], ['trucking_dr', 'Trucking DR'], ['verifikasi_customer', 'Verifikasi Customer'], ['refund', 'Refund'], ['permohonan', 'Permohonan'], ['lcr', 'LCR'], ['sc', 'SC'], ['oa', 'Verifikasi OA'], ['forecast', 'Forecast'], ['forecast_om', 'Forecast'], ['forecast_bm', 'Forecast']].filter(([k]) => has(k) && inbox.count(k) > 0).map(([k, l]) => `${inbox.count(k)} ${l.startsWith('home.') ? t(l) : l}`).join(' · '))
 const quick = [
   { key: 'penawaran', label: 'home.m.penawaran', icon: 'doc', to: 'approval', c: 'var(--accent)', mod: 'penawaran' },
   { key: 'inventory', label: 'home.m.inventory', icon: 'box', to: 'inventory', c: '#e07400', mod: 'inventory' },
   { key: 'po', label: 'home.m.po', icon: 'po', to: 'po', c: '#e50e30', mod: 'po' },
+  { key: 'po_batu', label: 'home.m.poBatu', icon: 'po', to: 'po-batu', c: '#7c3aed', mod: 'po_batu' },
   { key: 'harga', label: 'home.m.harga', icon: 'tag', to: 'harga', c: '#e07400', mod: 'harga' },
   { key: 'reservasi', label: 'home.m.reservasi', icon: 'calendar', to: 'reservasi', c: '#04247a', mod: 'reservasi' },
   { key: 'mobil', label: 'home.m.mobil', icon: 'car', to: 'mobil', c: '#e07400', mod: 'mobil' },
   { key: 'produk', label: 'home.m.produk', icon: 'drop', to: 'produk', c: '#0f8b8d', mod: 'produk' },
   { key: 'dr', label: 'home.m.dr', icon: 'cart', to: 'dr', c: '#6d28d9', mod: ['dr', 'dr_lihat'] },
   { key: 'po_supplier', label: 'home.m.poSupplier', icon: 'cart', to: 'po-supplier', c: '#6d28d9', mod: 'po_supplier' },
+  { key: 'po_supplier_batu', label: 'home.m.poSupplierBatu', icon: 'cart', to: 'po-batu-supplier', c: '#4f46e5', mod: 'po_supplier_batu' },
   { key: 'trucking_ti', label: 'home.m.trucking', icon: 'truck', to: 'trucking-ti', c: '#e07400', mod: 'trucking_ti' },
   { key: 'adjustment_stock', label: 'home.m.adjustment', icon: 'box', to: 'adjustment-stock', c: '#0f8b8d', mod: 'adjustment_stock' },
   { key: 'trucking_dr', label: 'home.m.truckingDr', icon: 'truck', to: 'trucking-dr', c: '#e07400', mod: 'trucking_dr' },
@@ -138,6 +140,9 @@ async function openNotif() {
     if (has('po')) jobs.push(syop.listPo({ per_page: 6, tab: 'wait' }).then((r) => ({
       key: 'po', to: 'po', icon: 'po', tone: 'rose', total: r.waiting,
       items: r.data.map((n) => ({ id: n.id, title: n.nomor_po, sub: `${n.nama_vendor} · ${rupiahRingkas(n.total_order)}`, when: n.tanggal, go: { name: 'po-detail', params: { id: n.id } } })) })))
+    if (has('po_batu')) jobs.push(syop.listPoBatu({ per_page: 6, tab: 'wait' }).then((r) => ({
+      key: 'po_batu', to: 'po-batu', icon: 'po', tone: 'violet', total: r.waiting,
+      items: r.data.map((n) => ({ id: n.id, title: n.nomor_po, sub: `${n.nama_vendor} · ${rupiahRingkas(n.total_order)}`, when: n.tanggal, go: { name: 'po-batu-detail', params: { id: n.id } } })) })))
     if (has('shipping')) jobs.push(syop.listShipping({ per_page: 6, tab: 'wait' }).then((r) => ({
       key: 'shipping', to: 'shipping', icon: 'ship', tone: 'indigo', total: r.waiting,
       items: r.data.map((n) => ({ id: n.id, title: n.nomor_si || n.nomor_req, sub: `${n.nama_vendor} · ${angka(n.quantity)} L`, when: n.created_at, go: { name: 'shipping-detail', params: { id: n.id } } })) })))
@@ -186,6 +191,7 @@ async function openNotif() {
     const by = Object.fromEntries(groups.map((g) => [g.key, g.total]))
     inbox.total = by.penawaran || 0
     inbox.po = by.po || 0
+    inbox.po_batu = by.po_batu || 0
     inbox.shipping = by.shipping || 0
     inbox.trucking = by.trucking || 0
     inbox.dr = by.dr || 0

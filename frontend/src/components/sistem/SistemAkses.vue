@@ -10,7 +10,7 @@ import { tanggalJam } from '../../utils/format'
 
 // Nama modul untuk tampilan (kunci = config/orca.php module_roles).
 const NAMA = {
-  penawaran: 'Penawaran', inventory: 'Inventori / Stok', produk: 'Master Produk', harga: 'Master Harga', po: 'Verifikasi PO Supplier', dr: 'Delivery Request',
+  penawaran: 'Penawaran', inventory: 'Inventori / Stok', produk: 'Master Produk', harga: 'Master Harga', po: 'Verifikasi PO Supplier (Minyak)', po_batu: 'Verifikasi PO Supplier Batu', po_supplier_batu: 'PO Supplier Batu (Procurement)', dr: 'Delivery Request',
   master: 'Master Terminal & Vendor', trucking_dr: 'Trucking Delivery Request', sc: 'Verifikasi Sales Confirmation', permohonan: 'Verifikasi Permohonan', lcr: 'Verifikasi LCR',
   refund: 'Penerima Refund', verifikasi_customer: 'Verifikasi Data Customer', trucking: 'Trucking Instruction', shipping: 'Shipping Instruction', report: 'Report Marketing',
   rssp_input: 'Input Report RSSP', rssp: 'Report RSSP', oa: 'Verifikasi Request OA', forecast_bm: 'Forecast BM', forecast_om: 'Forecast OM', forecast: 'Verifikasi Forecast (CEO)',

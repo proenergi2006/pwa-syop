@@ -39,6 +39,16 @@ export const decideShipping = (id, payload) => api.post(`/shipping/${id}/keputus
 export const listPo = (params = {}) => api.get('/po', { params }).then((r) => r.data)
 export const getPo = (id) => api.get(`/po/${id}`).then((r) => r.data)
 export const decidePo = (id, payload) => api.post(`/po/${id}/keputusan`, payload).then((r) => r.data)
+export const listPoBatu = (params = {}) => api.get('/po-batu', { params }).then((r) => r.data)
+export const getPoBatu = (id) => api.get(`/po-batu/${id}`).then((r) => r.data)
+export const cetakPoBatu = (id, base = 'po-batu') => api.get(`/${base}/${id}/cetak`).then((r) => r.data)
+export const pbsOpsi = () => api.get('/po-batu-supplier/opsi').then((r) => r.data)
+export const pbsList = (params = {}) => api.get('/po-batu-supplier', { params }).then((r) => r.data)
+export const pbsShow = (id) => api.get(`/po-batu-supplier/${id}`).then((r) => r.data)
+export const pbsUbahForm = (id) => api.get(`/po-batu-supplier/${id}/ubah`).then((r) => r.data)
+export const pbsSimpan = (id, p) => (id ? api.put(`/po-batu-supplier/${id}`, p) : api.post('/po-batu-supplier', p)).then((r) => r.data)
+export const pbsAjukan = (id) => api.post(`/po-batu-supplier/${id}/persetujuan`).then((r) => r.data)
+export const decidePoBatu = (id, payload) => api.post(`/po-batu/${id}/keputusan`, payload).then((r) => r.data)
 
 export const badges = () => api.get('/badges').then((r) => r.data)
 

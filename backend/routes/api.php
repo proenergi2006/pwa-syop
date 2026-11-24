@@ -17,6 +17,8 @@ use App\Http\Controllers\PenawaranController;
 use App\Http\Controllers\MasterTerminalController;
 use App\Http\Controllers\MasterVendorController;
 use App\Http\Controllers\MobilController;
+use App\Http\Controllers\PoBatuController;
+use App\Http\Controllers\PoBatuSupplierController;
 use App\Http\Controllers\PoController;
 use App\Http\Controllers\LcrController;
 use App\Http\Controllers\AksesController;
@@ -226,6 +228,24 @@ Route::prefix('v1')->group(function () {
         Route::get('/', [PoController::class, 'index']);
         Route::get('{id}', [PoController::class, 'show'])->whereNumber('id');
         Route::post('{id}/keputusan', [PoController::class, 'decide'])->whereNumber('id')->middleware('throttle:30,1');
+    });
+
+    Route::middleware(['auth:sanctum', ModuleAccess::class.':po_batu'])->prefix('po-batu')->group(function () {
+        Route::get('/', [PoBatuController::class, 'index']);
+        Route::get('{id}', [PoBatuController::class, 'show'])->whereNumber('id');
+        Route::get('{id}/cetak', [PoBatuController::class, 'cetak'])->whereNumber('id');
+        Route::post('{id}/keputusan', [PoBatuController::class, 'decide'])->whereNumber('id')->middleware('throttle:30,1');
+    });
+
+    Route::middleware(['auth:sanctum', ModuleAccess::class.':po_supplier_batu'])->prefix('po-batu-supplier')->group(function () {
+        Route::get('opsi', [PoBatuSupplierController::class, 'opsi']);
+        Route::get('/', [PoBatuSupplierController::class, 'index']);
+        Route::post('/', [PoBatuSupplierController::class, 'store'])->middleware('throttle:30,1');
+        Route::get('{id}', [PoBatuSupplierController::class, 'show'])->whereNumber('id');
+        Route::get('{id}/ubah', [PoBatuSupplierController::class, 'ubah'])->whereNumber('id');
+        Route::put('{id}', [PoBatuSupplierController::class, 'update'])->whereNumber('id')->middleware('throttle:30,1');
+        Route::post('{id}/persetujuan', [PoBatuSupplierController::class, 'ajukan'])->whereNumber('id')->middleware('throttle:30,1');
+        Route::get('{id}/cetak', [PoBatuController::class, 'cetak'])->whereNumber('id');
     });
 
     Route::middleware(['auth:sanctum', ModuleAccess::class.':shipping'])->prefix('shipping')->group(function () {
